@@ -1,9 +1,9 @@
 package priv
 
 import (
-	"testing"
-	"github.com/stretchr/testify/assert"
 	"database/sql"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func getTestRepository(t *testing.T, db *sql.DB) Repository {

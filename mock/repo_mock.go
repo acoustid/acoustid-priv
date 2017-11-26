@@ -47,15 +47,15 @@ func (mr *MockCatalogMockRecorder) CreateCatalog() *gomock.Call {
 }
 
 // CreateTrack mocks base method
-func (m *MockCatalog) CreateTrack(arg0 string, arg1 *chromaprint.Fingerprint) error {
-	ret := m.ctrl.Call(m, "CreateTrack", arg0, arg1)
+func (m *MockCatalog) CreateTrack(arg0 string, arg1 *chromaprint.Fingerprint, arg2 priv.Metadata) error {
+	ret := m.ctrl.Call(m, "CreateTrack", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // CreateTrack indicates an expected call of CreateTrack
-func (mr *MockCatalogMockRecorder) CreateTrack(arg0, arg1 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTrack", reflect.TypeOf((*MockCatalog)(nil).CreateTrack), arg0, arg1)
+func (mr *MockCatalogMockRecorder) CreateTrack(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTrack", reflect.TypeOf((*MockCatalog)(nil).CreateTrack), arg0, arg1, arg2)
 }
 
 // DeleteCatalog mocks base method

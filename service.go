@@ -2,9 +2,9 @@ package priv
 
 import (
 	"database/sql"
+	"encoding/base64"
 	"github.com/pkg/errors"
 	"strings"
-	"encoding/base64"
 )
 
 var ErrNotAuthorized = errors.New("not authorized")

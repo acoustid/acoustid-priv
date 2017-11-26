@@ -1,18 +1,17 @@
 package priv
 
 import (
-	"testing"
-	"github.com/stretchr/testify/assert"
 	"fmt"
+	"github.com/acoustid/go-acoustid/chromaprint"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"math/rand"
 	"os"
+	"testing"
 	"time"
-	"github.com/stretchr/testify/require"
-	"github.com/acoustid/go-acoustid/chromaprint"
 )
 
-const TestFingerprint =
-	"AQADtFKYSFKYofGJj0IOUTRy_AgTch1axYidILR0mFENmcdxfEiL9jiuH8089EJ7-B3yQexzVFWOboeI60h_HHWMHiZ3hCwLXTzy4JTx" +
+const TestFingerprint = "AQADtFKYSFKYofGJj0IOUTRy_AgTch1axYidILR0mFENmcdxfEiL9jiuH8089EJ7-B3yQexzVFWOboeI60h_HHWMHiZ3hCwLXTzy4JTx" +
 	"RsfX4cqI45IpInTCIL1x9EZEbcd7tJVhDfrxwzt8HD3-D9p2XDq0D0cY0agV_EKL78dPPBeC7byQv0IdHUdzdD_wO8g5QeOPtBX66EFn" +
 	"2Jpx5Ucz_Th2ovkMPrgaycgOGVtjI19x_DiR_mgrXDmuwKWsIv_x7JiYUQR7_Iavow_2odKP_fiO-MEvQlx19FnBG_mOMll05AqNLc-h" +
 	"bQ--o8yRTsd1pA-mZ0e3mWiiQC-LH_6OH2iiD1Ke4gi_ox9uobkQ6Tl0I0-NnsThLitu3MOO0FPQ6THUH_5E_AhtnFJS_GhCH31H_Dic" +
@@ -47,13 +46,11 @@ const TestFingerprint =
 	"IScAKMQoBBQxBEhEGBMCGAOMAUQIKZiQQhHEECGAIACEUUQQQJFUDAhgBGcAECA5NIYoZ4QDlACgFBTAAWCAFQIJIYRhxjFgCTCQAQAA" +
 	"M4ABIogWCCgiGSAOIQCJAMAAZBARDggGhAEBGWAYoA5AYCQhBjBhgDGICUcIMkQRBwgggjACEDMMQcAAAA"
 
-const TestFingerprintQuery =
-	"AQAAO4wiRdoiBe5y9Ds6H45WHV5y9NiF3qCO65GRfTiUdTTyqMBP5PAftBWuHEfT5SpCq8d3zDfaueB0wxeeox9GHdMffMcf5Bf06kHz" +
+const TestFingerprintQuery = "AQAAO4wiRdoiBe5y9Ds6H45WHV5y9NiF3qCO65GRfTiUdTTyqMBP5PAftBWuHEfT5SpCq8d3zDfaueB0wxeeox9GHdMffMcf5Bf06kHz" +
 	"rOCN_CiTRUf-YrxiQtR89DtRHumS4zrSY7p0dFsKRzk0vviP5uhvHE0-MHwKQgQBQENFAEDCWIERIEAK4YRwRDpAlBAOAAIAEAAxIggB" +
 	"wAgAASLAEYeAUMQZAQ"
 
-const TestFingerprintQuery2 =
-	"AQAAOxyVjVLwobmIPkfOQZeQH90OPzCPWch_iMYr40KpK7guXDN2aHmNetBXXC_Qr2haGXrwI8zR6cd3vKgP-zSOHJqPH9fxHD0aMjr-" +
+const TestFingerprintQuery2 = "AQAAOxyVjVLwobmIPkfOQZeQH90OPzCPWch_iMYr40KpK7guXDN2aHmNetBXXC_Qr2haGXrwI8zR6cd3vKgP-zSOHJqPH9fxHD0aMjr-" +
 	"4whvHOcRNovwD5p7NDdyWTiLH89wPUWIhocOhAgRRAqFGQAEQWUQMcAQp4iTCghHjBPCAAoMcgYRBABo4AGFBAIOQUEAUQA"
 
 func TestCatalog_Name(t *testing.T) {
@@ -106,7 +103,7 @@ func TestCatalog_CreateTrack(t *testing.T) {
 
 	fp, err := chromaprint.ParseFingerprintString(TestFingerprint)
 	require.NoError(t, err)
-	err = catalog.CreateTrack("fp1", fp)
+	err = catalog.CreateTrack("fp1", fp, Metadata{"name": "Track 1"})
 	assert.NoError(t, err)
 }
 
@@ -115,12 +112,12 @@ func TestCatalog_CreateTrack_Update(t *testing.T) {
 
 	fp, err := chromaprint.ParseFingerprintString(TestFingerprint)
 	require.NoError(t, err)
-	err = catalog.CreateTrack("fp1", fp)
+	err = catalog.CreateTrack("fp1", fp, Metadata{"name": "Track 1"})
 	assert.NoError(t, err)
 
 	fp2, err := chromaprint.ParseFingerprintString(TestFingerprintQuery)
 	require.NoError(t, err)
-	err = catalog.CreateTrack("fp1", fp2)
+	err = catalog.CreateTrack("fp1", fp2, Metadata{"name": "Track 1.2"})
 	assert.NoError(t, err)
 }
 
@@ -129,7 +126,7 @@ func TestCatalog_CreateTrack_CatalogDoesNotExist(t *testing.T) {
 
 	fp, err := chromaprint.ParseFingerprintString(TestFingerprint)
 	require.NoError(t, err)
-	err = catalog.CreateTrack("fp1", fp)
+	err = catalog.CreateTrack("fp1", fp, nil)
 	assert.NoError(t, err)
 }
 
@@ -138,7 +135,7 @@ func TestCatalog_DeleteTrack(t *testing.T) {
 
 	fp, err := chromaprint.ParseFingerprintString(TestFingerprint)
 	require.NoError(t, err)
-	err = catalog.CreateTrack("fp1", fp)
+	err = catalog.CreateTrack("fp1", fp, nil)
 	require.NoError(t, err)
 
 	err = catalog.DeleteTrack("fp1")
@@ -164,7 +161,7 @@ func TestCatalog_Search(t *testing.T) {
 
 	fp, err := chromaprint.ParseFingerprintString(TestFingerprint)
 	require.NoError(t, err)
-	err = catalog.CreateTrack("fp1", fp)
+	err = catalog.CreateTrack("fp1", fp, nil)
 	require.NoError(t, err)
 
 	fp2, err := chromaprint.ParseFingerprintString(TestFingerprintQuery)
@@ -173,7 +170,8 @@ func TestCatalog_Search(t *testing.T) {
 	assert.NoError(t, err)
 	if assert.NotNil(t, results) {
 		assert.NotEmpty(t, results.Results)
-		assert.Equal(t, "fp1", results.Results[0].TrackID)
+		assert.Equal(t, "fp1", results.Results[0].ID)
+		assert.Nil(t, results.Results[0].Metadata)
 	}
 }
 
@@ -182,7 +180,7 @@ func TestCatalog_Search_NoResults(t *testing.T) {
 
 	fp, err := chromaprint.ParseFingerprintString(TestFingerprint)
 	require.NoError(t, err)
-	err = catalog.CreateTrack("fp1", fp)
+	err = catalog.CreateTrack("fp1", fp, nil)
 	require.NoError(t, err)
 
 	fp2, err := chromaprint.ParseFingerprintString(TestFingerprintQuery2)

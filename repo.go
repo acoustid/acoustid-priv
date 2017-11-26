@@ -8,7 +8,7 @@ type Repository interface {
 }
 
 type RepositoryImpl struct {
-	db *sql.DB
+	db      *sql.DB
 	account *AccountImpl
 }
 

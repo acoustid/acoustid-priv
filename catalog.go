@@ -1,15 +1,16 @@
 package priv
 
 import (
+	"context"
 	"crypto/sha1"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"github.com/acoustid/go-acoustid/chromaprint"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
 	"log"
-	"context"
 )
 
 const NumIndexSegments = 16
@@ -25,9 +26,12 @@ type SearchResults struct {
 }
 
 type SearchResult struct {
-	TrackID string
-	Score   int
+	ID       string
+	Metadata Metadata
+	Score    int
 }
+
+type Metadata map[string]string
 
 type Catalog interface {
 	Name() string
@@ -37,7 +41,7 @@ type Catalog interface {
 
 	NewTrackID() string
 
-	CreateTrack(id string, fingerprint *chromaprint.Fingerprint) error
+	CreateTrack(id string, fp *chromaprint.Fingerprint, meta Metadata) error
 	DeleteTrack(id string) error
 
 	Search(query *chromaprint.Fingerprint, opts *SearchOptions) (*SearchResults, error)
@@ -159,7 +163,7 @@ func (c *CatalogImpl) NewTrackID() string {
 	return uuid.NewV4().String()
 }
 
-func (c *CatalogImpl) CreateTrack(externalID string, fingerprint *chromaprint.Fingerprint) error {
+func (c *CatalogImpl) CreateTrack(externalID string, fingerprint *chromaprint.Fingerprint, metadata Metadata) error {
 	err := c.CreateCatalog()
 	if err != nil {
 		return err
@@ -176,11 +180,20 @@ func (c *CatalogImpl) CreateTrack(externalID string, fingerprint *chromaprint.Fi
 		return err
 	}
 
-	fingerprintData := chromaprint.CompressFingerprint(*fingerprint)
-	fingerprintDataSHA1 := sha1.Sum(fingerprintData)
+	fingerprintBytes := chromaprint.CompressFingerprint(*fingerprint)
+	fingerprintSHA1 := sha1.Sum(fingerprintBytes)
 
-	query := fmt.Sprintf("INSERT INTO track_%d (external_id, fingerprint, fingerprint_sha1) VALUES ($1, $2, $3) RETURNING id", c.id)
-	row := tx.QueryRow(query, externalID, fingerprintData, fingerprintDataSHA1[:])
+	var metadataBytes *[]byte = nil
+	if metadata != nil {
+		data, err := json.Marshal(metadata)
+		if err != nil {
+			return errors.WithMessage(err, "failed to encode metadata")
+		}
+		metadataBytes = &data
+	}
+
+	query := fmt.Sprintf("INSERT INTO track_%d (external_id, fingerprint, fingerprint_sha1, metadata) VALUES ($1, $2, $3, $4) RETURNING id", c.id)
+	row := tx.QueryRow(query, externalID, fingerprintBytes, fingerprintSHA1[:], metadataBytes)
 	var internalID int
 	err = row.Scan(&internalID)
 	if err != nil {
@@ -307,7 +320,7 @@ func (c *CatalogImpl) Search(fingerprint *chromaprint.Fingerprint, opts *SearchO
 
 	results.Results = make([]SearchResult, 0, len(hits))
 
-	queryTpl := "SELECT id, external_id FROM track_%d WHERE id = any($1::int[])"
+	queryTpl := "SELECT id, external_id, metadata FROM track_%d WHERE id = any($1::int[])"
 	query := fmt.Sprintf(queryTpl, c.id)
 	trackIDs := make([]int, 0, len(hits))
 	for trackID := range hits {
@@ -320,14 +333,19 @@ func (c *CatalogImpl) Search(fingerprint *chromaprint.Fingerprint, opts *SearchO
 	for rows.Next() {
 		var trackID int
 		var externalTrackID string
-		err = rows.Scan(&trackID, &externalTrackID)
+		var metadata *Metadata
+		err = rows.Scan(&trackID, &externalTrackID, &metadata)
 		if err != nil {
 			return nil, err
 		}
-		results.Results = append(results.Results, SearchResult{
-			TrackID: externalTrackID,
-			Score:   hits[trackID],
-		})
+		result := SearchResult{
+			ID:    externalTrackID,
+			Score: hits[trackID],
+		}
+		if metadata != nil {
+			result.Metadata = *metadata
+		}
+		results.Results = append(results.Results, result)
 	}
 
 	return results, nil

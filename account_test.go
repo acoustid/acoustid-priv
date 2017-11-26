@@ -1,10 +1,10 @@
 package priv
 
 import (
-	"testing"
 	"database/sql"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 func getTestAccount(t *testing.T, db *sql.DB) Account {

@@ -122,7 +122,8 @@ type TrackResponse struct {
 }
 
 type CreateTrackRequest struct {
-	Fingerprint string `json:"fingerprint"`
+	Fingerprint string            `json:"fingerprint"`
+	Metadata    map[string]string `json:"metadata"`
 }
 
 func unmarshalRequestJSON(req *http.Request, v interface{}) error {
@@ -154,7 +155,7 @@ func (s *API) CreateTrackHandler(w http.ResponseWriter, request *http.Request, c
 		return
 	}
 
-	err = catalog.CreateTrack(trackID, fingerprint)
+	err = catalog.CreateTrack(trackID, fingerprint, data.Metadata)
 	if err != nil {
 		log.Printf("Failed to create track %s/%s: %v", catalog.Name(), trackID, err)
 		writeResponseInternalError(w)
@@ -186,7 +187,8 @@ type SearchResponse struct {
 }
 
 type SearchResponseResult struct {
-	TrackID string `json:"id"`
+	ID       string   `json:"id"`
+	Metadata Metadata `json:"metadata,omitempty"`
 }
 
 func (s *API) SearchHandler(w http.ResponseWriter, request *http.Request, catalog Catalog) {
@@ -217,7 +219,7 @@ func (s *API) SearchHandler(w http.ResponseWriter, request *http.Request, catalo
 		Results: make([]*SearchResponseResult, len(results.Results)),
 	}
 	for i, result := range results.Results {
-		response.Results[i] = &SearchResponseResult{result.TrackID}
+		response.Results[i] = &SearchResponseResult{result.ID, result.Metadata}
 	}
 	writeResponseOK(w, response)
 }

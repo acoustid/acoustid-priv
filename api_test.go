@@ -113,7 +113,7 @@ func TestApi_CreateAnonymousTrack(t *testing.T) {
 
 	service, catalog := createMockCatalogService(ctrl)
 	catalog.EXPECT().NewTrackID().Return("track100")
-	catalog.EXPECT().CreateTrack("track100", gomock.Any()).Return(nil)
+	catalog.EXPECT().CreateTrack("track100", gomock.Any(), gomock.Any()).Return(nil)
 
 	request := priv.CreateTrackRequest{Fingerprint: testFingerprint}
 	requestBody, err := json.Marshal(request)
@@ -130,7 +130,7 @@ func TestApi_CreateTrack(t *testing.T) {
 	defer ctrl.Finish()
 
 	service, catalog := createMockCatalogService(ctrl)
-	catalog.EXPECT().CreateTrack("track1", gomock.Any()).Return(nil)
+	catalog.EXPECT().CreateTrack("track1", gomock.Any(), gomock.Any()).Return(nil)
 
 	request := priv.CreateTrackRequest{Fingerprint: testFingerprint}
 	requestBody, err := json.Marshal(request)
@@ -147,7 +147,7 @@ func TestApi_CreateTrack_Error(t *testing.T) {
 	defer ctrl.Finish()
 
 	service, catalog := createMockCatalogService(ctrl)
-	catalog.EXPECT().CreateTrack("track1", gomock.Any()).Return(errors.New("failed"))
+	catalog.EXPECT().CreateTrack("track1", gomock.Any(), gomock.Any()).Return(errors.New("failed"))
 
 	request := priv.CreateTrackRequest{Fingerprint: testFingerprint}
 	requestBody, err := json.Marshal(request)
@@ -191,7 +191,7 @@ func TestApi_Search(t *testing.T) {
 	catalog.EXPECT().Search(gomock.Any(), gomock.Any()).DoAndReturn(func(query *chromaprint.Fingerprint, opts *priv.SearchOptions) (*priv.SearchResults, error) {
 		results := &priv.SearchResults{
 			Results: []priv.SearchResult{
-				{TrackID: "track1"},
+				{ID: "track1", Metadata: priv.Metadata{"name": "Track 1"}},
 			},
 		}
 		return results, nil
@@ -204,7 +204,7 @@ func TestApi_Search(t *testing.T) {
 	api := priv.NewAPI(service)
 	status, body := makeRequest(t, api, "POST", "/cat1/_search", bytes.NewReader(requestBody))
 	assert.Equal(t, http.StatusOK, status)
-	assert.JSONEq(t, `{"catalog": "cat1", "results": [{"id": "track1"}]}`, body)
+	assert.JSONEq(t, `{"catalog": "cat1", "results": [{"id": "track1", "metadata": {"name": "Track 1"}}]}`, body)
 }
 
 func assertHTTPInternalError(t *testing.T, status int, body string) {

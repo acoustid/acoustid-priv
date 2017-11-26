@@ -1,10 +1,10 @@
 package priv
 
 import (
-	"testing"
-	_ "github.com/lib/pq"
 	"database/sql"
+	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 var testDB *sql.DB
