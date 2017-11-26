@@ -1,0 +1,25 @@
+version: "3"
+services:
+
+  postgres:
+    image: postgres:alpine
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/10-schema.sql
+    environment:
+      POSTGRES_USER: acoustid
+      POSTGRES_DB: acoustid
+
+  postgres_test:
+    image: postgres:alpine
+    ports:
+      - "127.0.0.1:15432:5432"
+    tmpfs:
+      - /var/lib/postgres
+    volumes:
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/10-schema.sql
+      - ./sql/fixtures.sql:/docker-entrypoint-initdb.d/20-fixtures.sql
+    environment:
+      POSTGRES_USER: acoustid
+      POSTGRES_DB: acoustid_test
