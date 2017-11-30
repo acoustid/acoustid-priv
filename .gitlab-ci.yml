@@ -1,0 +1,32 @@
+stages:
+  - test
+  - build
+  - build-image
+
+test:
+  image: docker/compose
+  variables:
+    COMPOSE_PROJECT_NAME: $CI_PROJECT_ID-$CI_JOB_ID
+    COMPOSE_FILE: docker-compose.test.yml
+  script:
+    - docker-compose -f docker-compose.test.yml up --abort-on-container-exit
+  post_script:
+    - docker-compose down
+
+build:
+  stage: build
+  image: golang:1.9
+  script:
+    - mkdir -p $GOPATH/src/github.com/acoustid
+    - ln -s $CI_PROJECT_DIR $GOPATH/src/github.com/acoustid/priv
+    - go build github.com/acoustid/priv/cmd/acoustid-priv-api
+  artifacts:
+    paths:
+      - acoustid-priv-api
+    expire_in: 1w
+
+build-image:
+  stage: build-image
+  image: docker
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE .
