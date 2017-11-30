@@ -9,7 +9,8 @@ test:
     COMPOSE_PROJECT_NAME: $CI_PROJECT_ID-$CI_JOB_ID
     COMPOSE_FILE: docker-compose.test.yml
   script:
-    - docker-compose -f docker-compose.test.yml up test
+    - docker-compose up -d postgres-test
+    - docker-compose run test
   after_script:
     - docker-compose down
 
