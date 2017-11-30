@@ -39,6 +39,7 @@ func (s *API) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func (s *API) createRouter() *mux.Router {
 	router := mux.NewRouter()
 	router.HandleFunc("/_health", s.HealthHandler)
+	router.Methods(http.MethodGet).Path("/{catalog}").HandlerFunc(s.wrapCatalogHandler(s.GetCatalogHandler))
 	router.Methods(http.MethodPut).Path("/{catalog}").HandlerFunc(s.wrapCatalogHandler(s.CreateCatalogHandler))
 	router.Methods(http.MethodDelete).Path("/{catalog}").HandlerFunc(s.wrapCatalogHandler(s.DeleteCatalogHandler))
 	router.Methods(http.MethodPost).Path("/{catalog}").HandlerFunc(s.wrapCatalogHandler(s.CreateAnonymousTrackHandler))
@@ -63,7 +64,8 @@ func (s *API) wrapHandler(handler func(w http.ResponseWriter, req *http.Request,
 		account, err := Authenticate(s.service, req.Header.Get("Authorization"))
 		if err != nil {
 			if errors.Cause(err) == ErrNotAuthorized {
-				writeResponseError(w, http.StatusUnauthorized, Error{"unauthorized", "Not authorized"})
+				reason := fmt.Sprintf("Not authorized: %s", err)
+				writeResponseError(w, http.StatusUnauthorized, Error{"unauthorized", reason})
 				return
 			}
 			log.Printf("Failed to authenticate account: %v", err)
@@ -104,6 +106,20 @@ func (s *API) HealthHandler(w http.ResponseWriter, req *http.Request) {
 
 type CatalogResponse struct {
 	Catalog string `json:"catalog"`
+}
+
+func (s *API) GetCatalogHandler(w http.ResponseWriter, request *http.Request, catalog Catalog) {
+	exists, err := catalog.Exists()
+	if err != nil {
+		log.Printf("Failed to get catalog %s: %v", catalog.Name(), err)
+		writeResponseInternalError(w)
+		return
+	}
+	if !exists {
+		writeResponseError(w, http.StatusNotFound, Error{"not_found", "Catalog not found"})
+		return
+	}
+	writeResponseOK(w, &CatalogResponse{catalog.Name()})
 }
 
 func (s *API) CreateCatalogHandler(w http.ResponseWriter, request *http.Request, catalog Catalog) {

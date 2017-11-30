@@ -65,8 +65,14 @@ func Authenticate(service Service, auth string) (Account, error) {
 	}
 
 	account, err := service.GetAccountByApiKey(token)
-	if errors.Cause(err) == ErrAccountNotFound {
-		return nil, errors.WithMessage(ErrNotAuthorized, "invalid token")
+	if err != nil {
+		if errors.Cause(err) == ErrAccountNotFound {
+			return nil, errors.WithMessage(ErrNotAuthorized, "invalid token")
+		}
+		if errors.Cause(err) == ErrAccountDisabled {
+			return nil, errors.WithMessage(ErrNotAuthorized, "account disabled")
+		}
+		return nil, err
 	}
 
 	return account, nil

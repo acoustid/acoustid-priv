@@ -36,6 +36,7 @@ type Metadata map[string]string
 type Catalog interface {
 	Name() string
 
+	Exists() (bool, error)
 	CreateCatalog() error
 	DeleteCatalog() error
 
@@ -73,6 +74,21 @@ func (c *CatalogImpl) checkCatalog(tx *sql.Tx) (bool, error) {
 	}
 
 	if c.id != 0 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func (c *CatalogImpl) Exists() (bool, error) {
+	tx, err := c.db.BeginTx(context.Background(), &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		return false, errors.WithMessage(err, "failed to open transaction")
+	}
+	defer tx.Rollback()
+
+	exists, err := c.checkCatalog(tx)
+	if exists {
 		return true, nil
 	}
 
