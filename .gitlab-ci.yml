@@ -33,4 +33,18 @@ build-image:
   stage: build-image
   image: docker
   script:
-    - docker build -t $CI_REGISTRY_IMAGE .
+    - tmp_tag=tmp-${CI_PROJECT_ID}-${CI_JOB_ID}
+    - if [ -n "$CI_COMMIT_TAG" ]
+    - then
+    -   tags=( "$(echo $CI_COMMIT_TAG | sed 's/^v//')" latest )
+    - else
+    -   tags=( "$CI_COMMIT_REF_SLUG" )
+    - fi
+    - mv acoustid-priv-api docker/
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
+    - docker build -t $CI_REGISTRY_IMAGE:$tmp_tag docker/
+    - for tag in "${tags[@]}"
+    - do
+    -   docker tag $CI_REGISTRY_IMAGE:$tmp_tag $CI_REGISTRY_IMAGE:$tag
+    -   docker push $CI_REGISTRY_IMAGE:$tag
+    - done
