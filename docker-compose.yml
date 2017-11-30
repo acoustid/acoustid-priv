@@ -7,6 +7,8 @@ services:
       - "127.0.0.1:5432:5432"
     volumes:
       - ./sql/schema.sql:/docker-entrypoint-initdb.d/10-schema.sql
+    healthcheck:
+      test: ["CMD", "pg_isready"]
     environment:
       POSTGRES_USER: acoustid
       POSTGRES_DB: acoustid_priv
@@ -20,9 +22,25 @@ services:
     volumes:
       - ./sql/schema.sql:/docker-entrypoint-initdb.d/10-schema.sql
       - ./sql/fixtures.sql:/docker-entrypoint-initdb.d/20-fixtures.sql
+    healthcheck:
+      test: ["CMD", "pg_isready"]
     environment:
       POSTGRES_USER: acoustid
       POSTGRES_DB: acoustid_priv_test
+
+  api:
+    image: docker.oxygene.sk/acoustid/priv
+    build:
+      context: .
+      dockerfile: ${DOCKERFILE:-Dockerfile.build}
+    ports:
+      - "127.0.0.1:3382:3382"
+    environment:
+      ACOUSTID_PRIV_DB_HOST: postgres
+      ACOUSTID_PRIV_DB_USER: acoustid
+      ACOUSTID_PRIV_DB_NAME: acoustid_priv
+    depends_on:
+      - postgres
 
   test:
     image: golang:1.9

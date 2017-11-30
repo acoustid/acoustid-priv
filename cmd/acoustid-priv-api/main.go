@@ -19,7 +19,7 @@ import (
 func main() {
 	addr := os.Getenv("ACOUSTID_PRIV_BIND")
 	if addr == "" {
-		addr = ":5000"
+		addr = ":3382"
 	}
 
 	databaseURL := os.Getenv("ACOUSTID_PRIV_DB_URL")
@@ -76,10 +76,6 @@ func main() {
 	flag.Parse()
 
 	db, err := sql.Open("postgres", databaseURL)
-	if err != nil {
-		log.Fatalf("Unable to connect to the database: %v", err)
-	}
-	err = db.Ping()
 	if err != nil {
 		log.Fatalf("Unable to connect to the database: %v", err)
 	}
