@@ -7,13 +7,10 @@ import (
 	"github.com/acoustid/priv"
 	_ "github.com/lib/pq"
 	"log"
-	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
-	"io/ioutil"
 )
 
 func main() {
@@ -22,53 +19,9 @@ func main() {
 		addr = ":3382"
 	}
 
-	databaseURL := os.Getenv("ACOUSTID_PRIV_DB_URL")
-	if databaseURL == "" {
-		var u url.URL
-		u.Scheme = "postgresql"
-		host := os.Getenv("ACOUSTID_PRIV_DB_HOST")
-		port := os.Getenv("ACOUSTID_PRIV_DB_PORT")
-		if host != "" {
-			if port != "" {
-				u.Host = net.JoinHostPort(host, port)
-			} else {
-				u.Host = host
-			}
-		} else {
-			u.Host = "localhost"
-		}
-		user := os.Getenv("ACOUSTID_PRIV_DB_USER")
-		if user == "" {
-			user = "acoustid"
-		}
-		password := os.Getenv("ACOUSTID_PRIV_DB_PASSWORD")
-		if password != "" {
-			u.User = url.UserPassword(user, password)
-		} else {
-			passwordFile := os.Getenv("ACOUSTID_PRIV_DB_PASSWORD_FILE")
-			if passwordFile != "" {
-				passwordData, err := ioutil.ReadFile(passwordFile)
-				if err != nil {
-					log.Fatalf("Unable to read password from %s: %v", passwordFile, err)
-				}
-				password = string(passwordData)
-				u.User = url.UserPassword(user, password)
-			} else {
-				u.User = url.User(user)
-			}
-		}
-		u.Path = os.Getenv("ACOUSTID_PRIV_DB_NAME")
-		if u.Path == "" {
-			u.Path = "acoustid_priv"
-		}
-		sslMode := os.Getenv("ACOUSTID_PRIV_DB_SSL")
-		if sslMode == "" {
-			sslMode = "disable"
-		}
-		v := url.Values{}
-		v.Set("sslmode", sslMode)
-		u.RawQuery = v.Encode()
-		databaseURL = u.String()
+	databaseURL, err := priv.ParseDatabaseEnv(false)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	flag.StringVar(&addr, "bind", addr, "Address on which the server should listen")

@@ -37,7 +37,6 @@ services:
       - "127.0.0.1:3382:3382"
     environment:
       ACOUSTID_PRIV_DB_HOST: postgres
-      ACOUSTID_PRIV_DB_USER: acoustid
       ACOUSTID_PRIV_DB_NAME: acoustid_priv
     depends_on:
       - postgres
@@ -48,6 +47,7 @@ services:
     volumes:
       - .:/go/src/github.com/acoustid/priv
     environment:
-      ACOUSTID_PRIV_TEST_DB_URL: postgresql://acoustid:acoustid@postgres-test/acoustid_priv_test?sslmode=disable
+      ACOUSTID_PRIV_TEST_DB_HOST: postgres-test
+      ACOUSTID_PRIV_TEST_DB_NAME: acoustid_priv_test
     depends_on:
       - postgres-test

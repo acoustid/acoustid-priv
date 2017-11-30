@@ -5,7 +5,6 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"os"
 )
 
 var testDB *sql.DB
@@ -14,17 +13,17 @@ func connectToDB(t *testing.T) *sql.DB {
 	if testDB != nil {
 		return testDB
 	}
-	url := os.Getenv("ACOUSTID_PRIV_TEST_DB_URL")
-	if url == "" {
-		url = "postgresql://acoustid:acoustid@127.0.0.1:15432/acoustid_test?sslmode=disable"
+	url, err := ParseDatabaseEnv(true)
+	if err != nil {
+		t.Fatal(err)
 	}
 	db, err := sql.Open("postgres", url)
 	if err != nil {
-		t.Skip("Couldn't connect to the database: %v", err)
+		t.Fatalf("Couldn't connect to the database: %v", err)
 	}
 	err = db.Ping()
 	if err != nil {
-		t.Skip("Couldn't connect to the database: %v", err)
+		t.Fatalf("Couldn't connect to the database: %v", err)
 	}
 	testDB = db
 	return db
