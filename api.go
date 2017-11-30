@@ -45,7 +45,17 @@ func (s *API) createRouter() *mux.Router {
 	router.Methods(http.MethodPost).Path("/{catalog}/_search").HandlerFunc(s.wrapCatalogHandler(s.SearchHandler))
 	router.Methods(http.MethodPut).Path("/{catalog}/{track}").HandlerFunc(s.wrapTrackHandler(s.CreateTrackHandler))
 	router.Methods(http.MethodDelete).Path("/{catalog}/{track}").HandlerFunc(s.wrapTrackHandler(s.DeleteTrackHandler))
+	router.NotFoundHandler = http.HandlerFunc(s.NotFoundHandler)
+	router.MethodNotAllowedHandler = http.HandlerFunc(s.MethodNotAllowedHandler)
 	return router
+}
+
+func (s *API) NotFoundHandler(w http.ResponseWriter, request *http.Request) {
+	writeResponseError(w, http.StatusNotFound, Error{"not_found", "Page not found"})
+}
+
+func (s *API) MethodNotAllowedHandler(w http.ResponseWriter, request *http.Request) {
+	writeResponseError(w, http.StatusNotFound, Error{"method_not_allowed", "Method not allowed"})
 }
 
 func (s *API) wrapHandler(handler func(w http.ResponseWriter, req *http.Request, repo Repository)) http.HandlerFunc {
