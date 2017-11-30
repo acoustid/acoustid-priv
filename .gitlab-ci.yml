@@ -14,6 +14,8 @@ test:
     - docker-compose run test
   after_script:
     - docker-compose down
+  tags:
+    - docker-host
 
 build:
   stage: build
