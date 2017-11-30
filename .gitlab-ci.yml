@@ -4,7 +4,7 @@ stages:
   - build-image
 
 test:
-  image: docker/compose
+  image: docker/compose:1.17.1
   variables:
     COMPOSE_PROJECT_NAME: $CI_PROJECT_ID-$CI_JOB_ID
     COMPOSE_FILE: docker-compose.test.yml
