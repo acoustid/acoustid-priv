@@ -19,7 +19,7 @@ test:
 
 build:
   stage: build
-  image: golang:1.9
+  image: golang:1.9-alpine
   script:
     - mkdir -p $GOPATH/src/github.com/acoustid
     - ln -s $CI_PROJECT_DIR $GOPATH/src/github.com/acoustid/priv
