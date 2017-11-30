@@ -6,7 +6,8 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
-      - ./sql/schema.sql:/docker-entrypoint-initdb.d/10-schema.sql
+      - ./sql/init_db.sql:/docker-entrypoint-initdb.d/10-init_db.sql
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/20-schema.sql
     healthcheck:
       test: ["CMD", "pg_isready"]
     environment:
@@ -20,8 +21,9 @@ services:
     tmpfs:
       - /var/lib/postgres
     volumes:
-      - ./sql/schema.sql:/docker-entrypoint-initdb.d/10-schema.sql
-      - ./sql/fixtures.sql:/docker-entrypoint-initdb.d/20-fixtures.sql
+      - ./sql/init_db.sql:/docker-entrypoint-initdb.d/10-init_db.sql
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/20-schema.sql
+      - ./sql/fixtures.sql:/docker-entrypoint-initdb.d/30-fixtures.sql
     healthcheck:
       test: ["CMD", "pg_isready"]
     environment:

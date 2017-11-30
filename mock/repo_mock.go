@@ -82,6 +82,19 @@ func (mr *MockCatalogMockRecorder) DeleteTrack(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteTrack", reflect.TypeOf((*MockCatalog)(nil).DeleteTrack), arg0)
 }
 
+// Exists mocks base method
+func (m *MockCatalog) Exists() (bool, error) {
+	ret := m.ctrl.Call(m, "Exists")
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Exists indicates an expected call of Exists
+func (mr *MockCatalogMockRecorder) Exists() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockCatalog)(nil).Exists))
+}
+
 // Name mocks base method
 func (m *MockCatalog) Name() string {
 	ret := m.ctrl.Call(m, "Name")

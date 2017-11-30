@@ -1,12 +1,9 @@
 BEGIN;
 
-CREATE EXTENSION intarray;
-CREATE EXTENSION pgcrypto;
-
 CREATE TABLE account (
     id      serial PRIMARY KEY,
     api_key text NOT NULL,
-    enabled bool NOT NULL DEFAULT FALSE
+    enabled bool NOT NULL DEFAULT TRUE
 );
 
 CREATE UNIQUE INDEX catalog_idx_api_key
