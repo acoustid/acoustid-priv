@@ -1,7 +1,8 @@
 stages:
   - test
   - build
-  - docker
+  - docker1
+  - docker2
 
 test:
   image: docker.oxygene.sk/acoustid/docker-compose
@@ -30,23 +31,28 @@ build:
     expire_in: 1w
 
 docker-image:
-  stage: docker
+  stage: docker1
   image: docker
   script:
     - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
     - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG .
     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
-    - if [ -n "$CI_COMMIT_TAG" ]
-    - then
-    -   docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG $CI_REGISTRY_IMAGE:latest
-    -   docker push $CI_REGISTRY_IMAGE:latest
-    - fi
 
-docker-latest-tag:
-  stage: docker
+.tpl-docker-latest-tag: &docker-latest-tag
+  stage: docker2
   image: docker
   script:
     - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
     - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG $CI_REGISTRY_IMAGE:latest
     - docker push $CI_REGISTRY_IMAGE:latest
+
+docker-latest-tag:
+  <<: *docker-latest-tag
   when: manual
+  except:
+    - tags@acoustid/priv
+
+docker-latest-tag-auto:
+  <<: *docker-latest-tag
+  only:
+    - tags@acoustid/priv
