@@ -9,4 +9,27 @@ services:
       - ./sql/schema.sql:/docker-entrypoint-initdb.d/10-schema.sql
     environment:
       POSTGRES_USER: acoustid
-      POSTGRES_DB: acoustid
+      POSTGRES_DB: acoustid_priv
+
+  postgres-test:
+    image: postgres:alpine
+    ports:
+      - "127.0.0.1:15432:5432"
+    tmpfs:
+      - /var/lib/postgres
+    volumes:
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/10-schema.sql
+      - ./sql/fixtures.sql:/docker-entrypoint-initdb.d/20-fixtures.sql
+    environment:
+      POSTGRES_USER: acoustid
+      POSTGRES_DB: acoustid_priv_test
+
+  test:
+    image: golang:1.9
+    command: ["go", "test", "-v", "github.com/acoustid/priv/..."]
+    volumes:
+      - .:/go/src/github.com/acoustid/priv
+    environment:
+      ACOUSTID_PRIV_TEST_DB_URL: postgresql://acoustid:acoustid@postgres-test/acoustid_priv_test?sslmode=disable
+    depends_on:
+      - postgres-test

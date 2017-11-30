@@ -1,16 +1,14 @@
 stages:
   - test
   - build
-  - build-image
+  - docker
 
 test:
   image: docker.oxygene.sk/acoustid/docker-compose
   variables:
-    COMPOSE_PROJECT_NAME: gitlab_${CI_PROJECT_ID}_${CI_JOB_ID}
-    COMPOSE_FILE: docker-compose.test.yml
+    COMPOSE_PROJECT_NAME: gitlab-$CI_PROJECT_ID-$CI_JOB_ID
   script:
     - cd $CI_PROJECT_DIR
-    - docker-compose up -d postgres-test
     - docker-compose run test
   after_script:
     - docker-compose down
@@ -29,11 +27,20 @@ build:
       - acoustid-priv-api
     expire_in: 1w
 
-build-image:
-  stage: build-image
+docker-image:
+  stage: docker
   image: docker
   script:
     - mv acoustid-priv-api docker/
     - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
     - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG docker/
     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+
+docker-latest-tag:
+  stage: docker
+  image: docker
+  script:
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG $CI_REGISTRY_IMAGE:latest
+    - docker push $CI_REGISTRY_IMAGE:latest
+  when: manual

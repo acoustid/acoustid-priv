@@ -14,7 +14,7 @@ func connectToDB(t *testing.T) *sql.DB {
 	if testDB != nil {
 		return testDB
 	}
-	url := os.Getenv("ACOUSTID_PRIV_TEST_DB")
+	url := os.Getenv("ACOUSTID_PRIV_TEST_DB_URL")
 	if url == "" {
 		url = "postgresql://acoustid:acoustid@127.0.0.1:15432/acoustid_test?sslmode=disable"
 	}
