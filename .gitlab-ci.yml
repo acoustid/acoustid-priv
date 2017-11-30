@@ -9,6 +9,8 @@ test:
     COMPOSE_PROJECT_NAME: gitlab-$CI_PROJECT_ID-$CI_JOB_ID
   script:
     - cd $CI_PROJECT_DIR
+    - docker-compose up -d postgres-test
+    - sleep 1
     - docker-compose run test
   after_script:
     - docker-compose down
