@@ -1,4 +1,4 @@
-FROM go:1.9-alpine
-WORKDIR /opt/acoustid/priv
+FROM golang:1.9-alpine
+WORKDIR /opt/acoustid
 COPY acoustid-priv-api .
-CMD ["/opt/acoustid/priv/acoustid-priv-api"]
+CMD ["/opt/acoustid/acoustid-priv-api"]
