@@ -11,7 +11,7 @@ test:
   script:
     - cd $CI_PROJECT_DIR
     - docker-compose up -d postgres-test
-    - sleep 1
+    - sleep 10
     - docker-compose run test
   after_script:
     - docker-compose down
