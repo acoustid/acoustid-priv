@@ -15,7 +15,6 @@ import (
 
 const NumIndexSegments = 16
 const ValuesPerSegment = 128
-const QueryBits = 26
 
 type SearchOptions struct {
 	Stream bool
@@ -217,7 +216,7 @@ func (c *CatalogImpl) CreateTrack(externalID string, fingerprint *chromaprint.Fi
 	}
 
 	segment := 0
-	values := ExtractQuery(fingerprint, QueryBits)
+	values := ExtractQuery(fingerprint)
 	for i := 0; i < len(fingerprint.Hashes); i += ValuesPerSegment {
 		n := ValuesPerSegment
 		if len(fingerprint.Hashes)-i < n {
@@ -312,7 +311,7 @@ func (c *CatalogImpl) Search(fingerprint *chromaprint.Fingerprint, opts *SearchO
 	}
 
 	hits := make(map[int]int)
-	values := ExtractQuery(fingerprint, QueryBits)
+	values := ExtractQuery(fingerprint)
 	for i := 0; i < NumIndexSegments; i++ {
 		queryTpl := "SELECT track_id, icount(values & query) " +
 			"FROM track_index_%d_%d, (SELECT $1::int[] AS query) q " +
