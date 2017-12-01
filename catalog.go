@@ -11,8 +11,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
 	"log"
+	"sort"
+	"sync"
 )
 
+const SearchConcurrency = 8
 const NumIndexSegments = 16
 const ValuesPerSegment = 128
 
@@ -27,7 +30,7 @@ type SearchResults struct {
 type SearchResult struct {
 	ID       string
 	Metadata Metadata
-	Score    int
+	Match    *MatchResult
 }
 
 type Metadata map[string]string
@@ -296,7 +299,106 @@ func (c *CatalogImpl) DeleteTrack(externalID string) error {
 
 }
 
-func (c *CatalogImpl) Search(fingerprint *chromaprint.Fingerprint, opts *SearchOptions) (*SearchResults, error) {
+func (c *CatalogImpl) searchFingerprintIndexSegment(values []int32, segment int) (map[int]int, error) {
+	queryTpl := "SELECT track_id, icount(values & query) " +
+		"FROM track_index_%d_%d, (SELECT $1::int[] AS query) q " +
+		"WHERE values && query"
+	query := fmt.Sprintf(queryTpl, c.id, segment%NumIndexSegments)
+	rows, err := c.db.Query(query, pq.Array(values))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	hits := make(map[int]int)
+	for rows.Next() {
+		var trackID, count int
+		err = rows.Scan(&trackID, &count)
+		if err != nil {
+			return nil, err
+		}
+		hits[trackID] += count
+	}
+
+	return hits, nil
+}
+
+func (c *CatalogImpl) searchFingerprintIndex(values []int32, stream bool)  (map[int]int, error) {
+	var segmentValues [NumIndexSegments][]int32
+	var segmentHits [NumIndexSegments]map[int]int
+	var segmentErrs [NumIndexSegments]error
+
+	if stream {
+		for segment := 0; segment < NumIndexSegments; segment++ {
+			segmentValues[segment] = values
+		}
+	} else {
+		if len(values) < ValuesPerSegment {
+			segmentValues[0] = values
+		} else {
+			segmentValues[0] = values[:ValuesPerSegment]
+			if len(values) < ValuesPerSegment*2 {
+				segmentValues[1] = values[ValuesPerSegment:]
+			} else {
+				segmentValues[1] = values[ValuesPerSegment:ValuesPerSegment*2]
+			}
+		}
+	}
+
+	var wg sync.WaitGroup
+	for chunk := 0; chunk < SearchConcurrency; chunk++ {
+		wg.Add(1)
+		go func(chunk int) {
+			defer wg.Done()
+			for segment := 0; segment < NumIndexSegments; segment++ {
+				if segment%SearchConcurrency == chunk {
+					values := segmentValues[segment]
+					if len(values) != 0 {
+						hits, err := c.searchFingerprintIndexSegment(values, segment)
+						segmentHits[segment] = hits
+						segmentErrs[segment] = err
+					}
+				}
+			}
+		}(chunk)
+	}
+	wg.Wait()
+
+	hits := make(map[int]int)
+	for segment := 0; segment < NumIndexSegments; segment++ {
+		err := segmentErrs[segment]
+		if err != nil {
+			return nil, err
+		}
+		for trackID, count := range segmentHits[segment] {
+			hits[trackID] += count
+		}
+	}
+
+	return hits, nil
+}
+
+func (c *CatalogImpl) matchFingerprint(trackID int, queryFP *chromaprint.Fingerprint) (*MatchResult, error) {
+	queryTpl := "SELECT fingerprint FROM track_%d WHERE id = $1"
+	query := fmt.Sprintf(queryTpl, c.id)
+	row := c.db.QueryRow(query, trackID)
+	var data []byte
+	err := row.Scan(&data)
+	if err != nil {
+		return nil, err
+	}
+	masterFP, err := chromaprint.ParseFingerprint(data)
+	if err != nil {
+		return nil, err
+	}
+	return MatchFingerprints(masterFP, queryFP)
+}
+
+func (c *CatalogImpl) Search(queryFP *chromaprint.Fingerprint, opts *SearchOptions) (*SearchResults, error) {
+	if opts == nil {
+		opts = &SearchOptions{}
+	}
+
 	tx, err := c.db.BeginTx(context.Background(), &sql.TxOptions{ReadOnly: true})
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to open transaction")
@@ -310,55 +412,78 @@ func (c *CatalogImpl) Search(fingerprint *chromaprint.Fingerprint, opts *SearchO
 		return results, nil
 	}
 
-	hits := make(map[int]int)
-	values := ExtractQuery(fingerprint)
-	for i := 0; i < NumIndexSegments; i++ {
-		queryTpl := "SELECT track_id, icount(values & query) " +
-			"FROM track_index_%d_%d, (SELECT $1::int[] AS query) q " +
-			"WHERE values && query"
-		query := fmt.Sprintf(queryTpl, c.id, i%NumIndexSegments)
-		rows, err := tx.Query(query, pq.Array(values))
-		if err != nil {
-			return nil, err
-		}
-		for rows.Next() {
-			var trackID, trackHits int
-			err = rows.Scan(&trackID, &trackHits)
-			if err != nil {
-				rows.Close()
-				return nil, err
-			}
-			hits[trackID] += trackHits
-		}
-		rows.Close()
+	values := ExtractQuery(queryFP)
+
+	hits, err := c.searchFingerprintIndex(values, opts.Stream)
+	if err != nil {
+		return nil, errors.WithMessage(err, "index search failed")
 	}
 
-	results.Results = make([]SearchResult, 0, len(hits))
+	maxCount := 0
+	for _, count := range hits {
+		if count > maxCount {
+			maxCount = count
+		}
+	}
+	countThreshold := maxCount / 10
+	if countThreshold < 2 {
+		countThreshold = 2
+	}
+
+	type TopHit struct {
+		TrackID int
+		Count   int
+	}
+
+	topHits := make([]TopHit, 0, len(hits))
+	for trackID, count := range hits {
+		if count >= countThreshold {
+			topHits = append(topHits, TopHit{trackID, count})
+		}
+	}
+	sort.Slice(topHits, func(i, j int) bool { return topHits[i].Count < topHits[j].Count })
+
+	matches := make(map[int]*MatchResult)
+	matchingTrackIDs := make([]int, 0, len(topHits))
+
+	for _, hit := range topHits {
+		_, exists := matches[hit.TrackID]
+		if !exists {
+			match, err := c.matchFingerprint(hit.TrackID, queryFP)
+			if err != nil {
+				return nil, errors.WithMessage(err, "matching failed")
+			}
+			if !match.Empty() {
+				matches[hit.TrackID] = match
+				matchingTrackIDs = append(matchingTrackIDs, hit.TrackID)
+			}
+		}
+	}
 
 	queryTpl := "SELECT id, external_id, metadata FROM track_%d WHERE id = any($1::int[])"
 	query := fmt.Sprintf(queryTpl, c.id)
-	trackIDs := make([]int, 0, len(hits))
-	for trackID := range hits {
-		trackIDs = append(trackIDs, trackID)
-	}
-	rows, err := tx.Query(query, pq.Array(trackIDs))
+	rows, err := tx.Query(query, pq.Array(matchingTrackIDs))
 	if err != nil {
 		return nil, err
 	}
+	results.Results = make([]SearchResult, 0, len(topHits))
 	for rows.Next() {
 		var trackID int
 		var externalTrackID string
-		var metadata *Metadata
-		err = rows.Scan(&trackID, &externalTrackID, &metadata)
+		var metadataBytes json.RawMessage
+		err = rows.Scan(&trackID, &externalTrackID, &metadataBytes)
 		if err != nil {
 			return nil, err
 		}
 		result := SearchResult{
 			ID:    externalTrackID,
-			Score: hits[trackID],
+			Match: matches[trackID],
 		}
-		if metadata != nil {
-			result.Metadata = *metadata
+		if metadataBytes != nil {
+			err = json.Unmarshal(metadataBytes, &result.Metadata)
+			if err != nil {
+				return nil, errors.WithMessage(err, "metadata parsing failed")
+			}
 		}
 		results.Results = append(results.Results, result)
 	}

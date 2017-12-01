@@ -191,7 +191,19 @@ func TestApi_Search(t *testing.T) {
 	catalog.EXPECT().Search(gomock.Any(), gomock.Any()).DoAndReturn(func(query *chromaprint.Fingerprint, opts *priv.SearchOptions) (*priv.SearchResults, error) {
 		results := &priv.SearchResults{
 			Results: []priv.SearchResult{
-				{ID: "track1", Metadata: priv.Metadata{"name": "Track 1"}},
+				{
+					ID:       "track1",
+					Metadata: priv.Metadata{"name": "Track 1"},
+					Match: &priv.MatchResult{
+						Version:      1,
+						Config:       priv.FingerprintConfigs[1],
+						MasterLength: 1,
+						QueryLength:  1,
+						Sections: []priv.MatchingSection{
+							{Offset: 0, Start: 0, End: 121},
+						},
+					},
+				},
 			},
 		}
 		return results, nil
@@ -204,7 +216,7 @@ func TestApi_Search(t *testing.T) {
 	api := priv.NewAPI(service)
 	status, body := makeRequest(t, api, "POST", "/cat1/_search", bytes.NewReader(requestBody))
 	assert.Equal(t, http.StatusOK, status)
-	assert.JSONEq(t, `{"catalog": "cat1", "results": [{"id": "track1", "metadata": {"name": "Track 1"}}]}`, body)
+	assert.JSONEq(t, `{"catalog": "cat1", "results": [{"id": "track1", "metadata": {"name": "Track 1"}, "match": {"position": 0, "duration": 17.580979}}]}`, body)
 }
 
 func assertHTTPInternalError(t *testing.T, status int, body string) {

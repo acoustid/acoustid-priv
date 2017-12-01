@@ -156,39 +156,85 @@ func TestCatalog_DeleteTrack_CatalogDoesNotExist(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestCatalog_Search(t *testing.T) {
+func TestCatalog_Search_NoStream_NoMatch1(t *testing.T) {
 	catalog := getTestCatalog(t, true)
 
-	fp, err := chromaprint.ParseFingerprintString(TestFingerprint)
-	require.NoError(t, err)
-	err = catalog.CreateTrack("fp1", fp, nil)
+	masterID := "t1"
+	masterFP := loadTestFingerprint(t, "calibre_sunrise")
+	masterMetadata := Metadata{"title": "Sunrise", "artist": "Calibre"}
+	err := catalog.CreateTrack(masterID, masterFP, masterMetadata)
 	require.NoError(t, err)
 
-	fp2, err := chromaprint.ParseFingerprintString(TestFingerprintQuery)
-	require.NoError(t, err)
-	results, err := catalog.Search(fp2, nil)
-	assert.NoError(t, err)
-	if assert.NotNil(t, results) {
-		assert.NotEmpty(t, results.Results)
-		assert.Equal(t, "fp1", results.Results[0].ID)
-		assert.Nil(t, results.Results[0].Metadata)
+	queryFP := loadTestFingerprint(t, "radio1_1_ad")
+	results, err := catalog.Search(queryFP, &SearchOptions{Stream: false})
+	if assert.NoError(t, err) {
+		if assert.NotNil(t, results) {
+			assert.Empty(t, results.Results)
+		}
 	}
 }
 
-func TestCatalog_Search_NoResults(t *testing.T) {
+func TestCatalog_Search_Stream_NoMatch(t *testing.T) {
 	catalog := getTestCatalog(t, true)
 
-	fp, err := chromaprint.ParseFingerprintString(TestFingerprint)
-	require.NoError(t, err)
-	err = catalog.CreateTrack("fp1", fp, nil)
+	masterID := "t1"
+	masterFP := loadTestFingerprint(t, "calibre_sunrise")
+	masterMetadata := Metadata{"title": "Sunrise", "artist": "Calibre"}
+	err := catalog.CreateTrack(masterID, masterFP, masterMetadata)
 	require.NoError(t, err)
 
-	fp2, err := chromaprint.ParseFingerprintString(TestFingerprintQuery2)
+	queryFP := loadTestFingerprint(t, "radio1_1_ad")
+	results, err := catalog.Search(queryFP, &SearchOptions{Stream: true})
+	if assert.NoError(t, err) {
+		if assert.NotNil(t, results) {
+			assert.Empty(t, results.Results)
+		}
+	}
+}
+
+func TestCatalog_Search_Stream_PartialMatch(t *testing.T) {
+	catalog := getTestCatalog(t, true)
+
+	masterID := "t1"
+	masterFP := loadTestFingerprint(t, "calibre_sunrise")
+	masterMetadata := Metadata{"title": "Sunrise", "artist": "Calibre"}
+	err := catalog.CreateTrack(masterID, masterFP, masterMetadata)
 	require.NoError(t, err)
-	results, err := catalog.Search(fp2, nil)
-	assert.NoError(t, err)
-	if assert.NotNil(t, results) {
-		assert.Empty(t, results.Results)
+
+	queryFP := loadTestFingerprint(t, "radio1_2_ad_and_calibre_sunshine")
+	results, err := catalog.Search(queryFP, &SearchOptions{Stream: true})
+	if assert.NoError(t, err) {
+		if assert.NotNil(t, results) {
+			if assert.NotEmpty(t, results.Results) {
+				assert.Equal(t, 1, len(results.Results))
+				assert.Equal(t, masterID, results.Results[0].ID)
+				assert.Equal(t, masterMetadata, results.Results[0].Metadata)
+				assert.Equal(t, "12.876237s", results.Results[0].Match.MatchingDuration().String())
+			}
+		}
+	}
+}
+
+func TestCatalog_Search_Stream_FullMatch(t *testing.T) {
+	catalog := getTestCatalog(t, true)
+
+	masterID := "t1"
+	masterFP := loadTestFingerprint(t, "calibre_sunrise")
+	masterMetadata := Metadata{"title": "Sunrise", "artist": "Calibre"}
+	err := catalog.CreateTrack(masterID, masterFP, masterMetadata)
+	require.NoError(t, err)
+
+	queryFP := loadTestFingerprint(t, "radio1_3_calibre_sunshine")
+	results, err := catalog.Search(queryFP, &SearchOptions{Stream: true})
+	if assert.NoError(t, err) {
+		if assert.NotNil(t, results) {
+			if assert.NotEmpty(t, results.Results) {
+				assert.Equal(t, 1, len(results.Results))
+				assert.Equal(t, masterID, results.Results[0].ID)
+				assert.Equal(t, masterMetadata, results.Results[0].Metadata)
+				assert.Equal(t, "17.580979s", results.Results[0].Match.MatchingDuration().String())
+			}
+		}
 	}
 }
 

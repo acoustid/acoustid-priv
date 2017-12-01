@@ -213,8 +213,14 @@ type SearchResponse struct {
 }
 
 type SearchResponseResult struct {
-	ID       string   `json:"id"`
-	Metadata Metadata `json:"metadata,omitempty"`
+	ID       string                    `json:"id"`
+	Match    SearchResponseResultMatch `json:"match"`
+	Metadata Metadata                  `json:"metadata,omitempty"`
+}
+
+type SearchResponseResultMatch struct {
+	Position float64 `json:"position"`
+	Duration float64 `json:"duration"`
 }
 
 func (s *API) SearchHandler(w http.ResponseWriter, request *http.Request, catalog Catalog) {
@@ -232,6 +238,11 @@ func (s *API) SearchHandler(w http.ResponseWriter, request *http.Request, catalo
 		return
 	}
 
+	if data.Stream && len(fingerprint.Hashes) < 300 {
+		writeResponseError(w, http.StatusBadRequest, Error{"invalid_request", "Fingerprint too long for stream search"})
+		return
+	}
+
 	opts := &SearchOptions{Stream: data.Stream}
 	results, err := catalog.Search(fingerprint, opts)
 	if err != nil {
@@ -245,7 +256,14 @@ func (s *API) SearchHandler(w http.ResponseWriter, request *http.Request, catalo
 		Results: make([]*SearchResponseResult, len(results.Results)),
 	}
 	for i, result := range results.Results {
-		response.Results[i] = &SearchResponseResult{result.ID, result.Metadata}
+		response.Results[i] = &SearchResponseResult{
+			ID:       result.ID,
+			Metadata: result.Metadata,
+			Match: SearchResponseResultMatch{
+				Position: result.Match.MasterOffset().Seconds(),
+				Duration: result.Match.MatchingDuration().Seconds(),
+			},
+		}
 	}
 	writeResponseOK(w, response)
 }

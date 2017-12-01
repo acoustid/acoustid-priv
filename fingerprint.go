@@ -62,7 +62,7 @@ func (c FingerprintConfig) Duration(i int) time.Duration {
 	return c.Offset(i) + c.Delay()
 }
 
-var fingerprintConfigs = map[int]FingerprintConfig{
+var FingerprintConfigs = map[int]FingerprintConfig{
 	1: {
 		SampleRate:            11025,
 		FrameSize:             4096,
@@ -78,6 +78,10 @@ type MatchResult struct {
 	MasterLength int
 	QueryLength  int
 	Sections     []MatchingSection
+}
+
+func (mr MatchResult) Empty() bool {
+	return len(mr.Sections) == 0
 }
 
 func (mr MatchResult) MatchingDuration() time.Duration {
@@ -133,7 +137,7 @@ func MatchFingerprints(master *chromaprint.Fingerprint, query *chromaprint.Finge
 	if master.Version != query.Version {
 		return nil, ErrInvalidFingerprintVersion
 	}
-	config, exists := fingerprintConfigs[master.Version]
+	config, exists := FingerprintConfigs[master.Version]
 	if !exists {
 		return nil, ErrInvalidFingerprintVersion
 	}
@@ -271,9 +275,14 @@ func alignFingerprints(master *chromaprint.Fingerprint, query *chromaprint.Finge
 
 	// TODO gaussian filter
 
+	countThreshold := maxOffsetCount/MaxOffsetThresholdDiv
+	if countThreshold < 2 {
+		countThreshold = 2
+	}
+
 	offsetHits := make([]OffsetHit, 0)
 	for offset, count := range offsets {
-		if count >= maxOffsetCount/MaxOffsetThresholdDiv {
+		if count >= countThreshold {
 			if offsets[offset-1] <= count && offsets[offset+1] < count {
 				offsetHits = append(offsetHits, OffsetHit{offset, count})
 			}
