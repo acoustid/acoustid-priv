@@ -1,11 +1,11 @@
 package priv
 
 import (
-	"os"
-	"net/url"
-	"net"
-	"io/ioutil"
 	"github.com/pkg/errors"
+	"io/ioutil"
+	"net"
+	"net/url"
+	"os"
 )
 
 func ParseDatabaseEnv(test bool) (string, error) {

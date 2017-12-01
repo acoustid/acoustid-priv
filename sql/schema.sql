@@ -1,13 +1,14 @@
 BEGIN;
 
 CREATE TABLE account (
-    id      serial PRIMARY KEY,
-    api_key text NOT NULL,
-    enabled bool NOT NULL DEFAULT TRUE
+    id serial PRIMARY KEY
 );
 
-CREATE UNIQUE INDEX catalog_idx_api_key
-    ON account (api_key);
+CREATE TABLE api_key (
+    api_key    text PRIMARY KEY,
+    account_id int  REFERENCES account (id),
+    expires_at timestamp with time zone
+);
 
 CREATE TABLE catalog (
     id         serial PRIMARY KEY,

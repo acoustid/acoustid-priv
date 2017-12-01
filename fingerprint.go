@@ -43,12 +43,12 @@ type FingerprintConfig struct {
 
 func (c FingerprintConfig) ItemDuration() time.Duration {
 	duration := c.FrameSize - c.FrameOverlap
-	return time.Microsecond * time.Duration(duration * 1000000 / c.SampleRate)
+	return time.Microsecond * time.Duration(duration*1000000/c.SampleRate)
 }
 
 func (c FingerprintConfig) Delay() time.Duration {
-	delay := (c.FrameSize - c.FrameOverlap) * ((c.NumFilterCoefficients - 1) + (c.MaxFilterWidth- 1)) + c.FrameOverlap
-	return time.Microsecond * time.Duration(delay * 1000000 / c.SampleRate)
+	delay := (c.FrameSize-c.FrameOverlap)*((c.NumFilterCoefficients-1)+(c.MaxFilterWidth-1)) + c.FrameOverlap
+	return time.Microsecond * time.Duration(delay*1000000/c.SampleRate)
 }
 
 func (c FingerprintConfig) Offset(i int) time.Duration {
@@ -66,7 +66,7 @@ var FingerprintConfigs = map[int]FingerprintConfig{
 	1: {
 		SampleRate:            11025,
 		FrameSize:             4096,
-		FrameOverlap:          4096 - 4096 / 3,
+		FrameOverlap:          4096 - 4096/3,
 		NumFilterCoefficients: 5,
 		MaxFilterWidth:        16,
 	},
@@ -189,11 +189,11 @@ func matchAlignedFingerprints(master *chromaprint.Fingerprint, query *chromaprin
 	for i := 0; i < n; i++ {
 		diff[i] = float64(util.PopCount32(masterHashes[i] ^ queryHashes[i]))
 	}
-//	log.Print(diff)
+	//	log.Print(diff)
 
 	smoothedDiff := make([]float64, n)
 	gaussianFilter(diff, smoothedDiff, 3.6, 5)
-//	log.Print(smoothedDiff)
+	//	log.Print(smoothedDiff)
 
 	smoothedDiffGradient := make([]float64, n)
 	gradient(smoothedDiff, smoothedDiffGradient, 7)
@@ -207,7 +207,7 @@ func matchAlignedFingerprints(master *chromaprint.Fingerprint, query *chromaprin
 		if x0 <= x1 && x2 < x1 {
 			g := x1 / (1 + smoothedDiff[i]/4)
 			if g > 3.0 {
-	//			log.Printf("peak %v %v %v", i, x1, g)
+				//			log.Printf("peak %v %v %v", i, x1, g)
 				edges = append(edges, i)
 			}
 		}
@@ -275,7 +275,7 @@ func alignFingerprints(master *chromaprint.Fingerprint, query *chromaprint.Finge
 
 	// TODO gaussian filter
 
-	countThreshold := maxOffsetCount/MaxOffsetThresholdDiv
+	countThreshold := maxOffsetCount / MaxOffsetThresholdDiv
 	if countThreshold < 2 {
 		countThreshold = 2
 	}

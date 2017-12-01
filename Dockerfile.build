@@ -4,5 +4,6 @@ COPY ./ ./
 RUN go build github.com/acoustid/priv/cmd/acoustid-priv-api
 
 FROM alpine
+RUN apk --no-cache add ca-certificates
 COPY --from=builder /go/src/github.com/acoustid/priv/acoustid-priv-api /usr/local/bin/
 CMD ["acoustid-priv-api"]

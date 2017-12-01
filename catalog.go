@@ -323,7 +323,7 @@ func (c *CatalogImpl) searchFingerprintIndexSegment(values []int32, segment int)
 	return hits, nil
 }
 
-func (c *CatalogImpl) searchFingerprintIndex(values []int32, stream bool)  (map[int]int, error) {
+func (c *CatalogImpl) searchFingerprintIndex(values []int32, stream bool) (map[int]int, error) {
 	var segmentValues [NumIndexSegments][]int32
 	var segmentHits [NumIndexSegments]map[int]int
 	var segmentErrs [NumIndexSegments]error
@@ -340,7 +340,7 @@ func (c *CatalogImpl) searchFingerprintIndex(values []int32, stream bool)  (map[
 			if len(values) < ValuesPerSegment*2 {
 				segmentValues[1] = values[ValuesPerSegment:]
 			} else {
-				segmentValues[1] = values[ValuesPerSegment:ValuesPerSegment*2]
+				segmentValues[1] = values[ValuesPerSegment : ValuesPerSegment*2]
 			}
 		}
 	}

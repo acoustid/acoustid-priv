@@ -1,6 +1,6 @@
 BEGIN;
 
-INSERT INTO account (api_key, enabled) VALUES ('api_key', true);
-INSERT INTO account (api_key, enabled) VALUES ('disabled_api_key', false);
+INSERT INTO account (id) VALUES (1);
+INSERT INTO api_key (api_key, account_id) VALUES ('api_key', 1);
 
 COMMIT;

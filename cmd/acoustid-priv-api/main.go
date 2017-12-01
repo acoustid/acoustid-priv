@@ -34,6 +34,8 @@ func main() {
 	}
 
 	service := priv.NewService(db)
+	service.SetApiKeyProvider(&priv.AcoustidBizApiKeyProvider{})
+
 	handler := priv.NewAPI(service)
 
 	quit := make(chan os.Signal, 1)

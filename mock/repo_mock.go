@@ -5,8 +5,8 @@
 package mock
 
 import (
-	priv "github.com/acoustid/priv"
 	chromaprint "github.com/acoustid/go-acoustid/chromaprint"
+	priv "github.com/acoustid/priv"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -248,4 +248,14 @@ func (m *MockService) GetAccountByApiKey(arg0 string) (priv.Account, error) {
 // GetAccountByApiKey indicates an expected call of GetAccountByApiKey
 func (mr *MockServiceMockRecorder) GetAccountByApiKey(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountByApiKey", reflect.TypeOf((*MockService)(nil).GetAccountByApiKey), arg0)
+}
+
+// SetApiKeyProvider mocks base method
+func (m *MockService) SetApiKeyProvider(arg0 priv.ApiKeyProvider) {
+	m.ctrl.Call(m, "SetApiKeyProvider", arg0)
+}
+
+// SetApiKeyProvider indicates an expected call of SetApiKeyProvider
+func (mr *MockServiceMockRecorder) SetApiKeyProvider(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetApiKeyProvider", reflect.TypeOf((*MockService)(nil).SetApiKeyProvider), arg0)
 }

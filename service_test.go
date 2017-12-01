@@ -37,16 +37,6 @@ func TestService_GetAccountByApiKey(t *testing.T) {
 	assert.NotNil(t, account)
 }
 
-func TestService_GetAccountByApiKey_Disabled(t *testing.T) {
-	db := connectToDB(t)
-	service := NewService(db)
-	account, err := service.GetAccountByApiKey("disabled_api_key")
-	if assert.Error(t, err) {
-		assert.Equal(t, ErrAccountDisabled, err)
-	}
-	assert.Nil(t, account)
-}
-
 func TestService_GetAccountByApiKey_NotFound(t *testing.T) {
 	db := connectToDB(t)
 	service := NewService(db)
