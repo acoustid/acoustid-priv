@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/acoustid/go-acoustid/chromaprint"
 	"github.com/acoustid/priv"
 	"github.com/acoustid/priv/mock"
@@ -17,14 +16,12 @@ import (
 	"testing"
 )
 
-const testApiKey = "secret"
 const testFingerprint = "AQAAZFKYSFKYofGJj0IOUTRy_AgTch1axYidILR0mFENmcdxfEiL9jiuH8089EJ7-B3yQexzVFWOboeI60h_HHWMHiZ3hCwLXTzy4JTxRsfX4cqI45IpInTCIL1x9EZEbcd7tJVhDfrxwzt8HD3-D9p2XDq0D0cY0agV_EKL78dPPBeC7byQv0IdHUdzdD_wO8g5QeOPtBX66EFn2Jpx5Ucz_Th2ovkMPrgaycgOGVtjI19x_DiR_gAAyHFGUJGgUAAw4JQBQDAHCUIKEIKQEBA4gpFyyEiEACSgEQCIMVYyIwBQwiiBBDFIG0QIEY4AQAAAGgkEnHFXaCQA"
 
 func makeRequest(t *testing.T, s *priv.API, method string, path string, body io.Reader) (int, string) {
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(method, path, body)
 	require.NoError(t, err)
-	req.Header.Add("Authorization", fmt.Sprintf("Token %s", testApiKey))
 	s.ServeHTTP(w, req)
 	return w.Code, w.Body.String()
 }
@@ -52,7 +49,7 @@ func createMockCatalogService(ctrl *gomock.Controller) (*mock.MockService, *mock
 	account.EXPECT().Repository().Return(repo)
 
 	service := mock.NewMockService(ctrl)
-	service.EXPECT().GetAccountByApiKey(testApiKey).Return(account, nil)
+	service.EXPECT().GetAccount(gomock.Any()).Return(account, nil)
 
 	return service, catalog
 }

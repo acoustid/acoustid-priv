@@ -24,11 +24,13 @@ type ErrorResponse struct {
 type API struct {
 	service Service
 	router  *mux.Router
+	Auth    Authenticator
 }
 
 func NewAPI(service Service) *API {
 	s := &API{service: service}
 	s.router = s.createRouter()
+	s.Auth = &NoAuth{}
 	return s
 }
 
@@ -61,7 +63,7 @@ func (s *API) MethodNotAllowedHandler(w http.ResponseWriter, request *http.Reque
 
 func (s *API) wrapHandler(handler func(w http.ResponseWriter, req *http.Request, repo Repository)) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		account, err := Authenticate(s.service, req.Header.Get("Authorization"))
+		externalAccountID, err := s.Auth.Authenticate(req)
 		if err != nil {
 			if errors.Cause(err) == ErrNotAuthorized {
 				reason := fmt.Sprintf("Not authorized: %s", err)
@@ -69,6 +71,12 @@ func (s *API) wrapHandler(handler func(w http.ResponseWriter, req *http.Request,
 				return
 			}
 			log.Printf("Failed to authenticate account: %v", err)
+			writeResponseInternalError(w)
+			return
+		}
+		account, err := s.service.GetAccount(externalAccountID)
+		if err != nil {
+			log.Printf("Failed to get account: %v", err)
 			writeResponseInternalError(w)
 			return
 		}

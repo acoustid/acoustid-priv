@@ -237,25 +237,15 @@ func (m *MockService) EXPECT() *MockServiceMockRecorder {
 	return m.recorder
 }
 
-// GetAccountByApiKey mocks base method
-func (m *MockService) GetAccountByApiKey(arg0 string) (priv.Account, error) {
-	ret := m.ctrl.Call(m, "GetAccountByApiKey", arg0)
+// GetAccount mocks base method
+func (m *MockService) GetAccount(arg0 string) (priv.Account, error) {
+	ret := m.ctrl.Call(m, "GetAccount", arg0)
 	ret0, _ := ret[0].(priv.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetAccountByApiKey indicates an expected call of GetAccountByApiKey
-func (mr *MockServiceMockRecorder) GetAccountByApiKey(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountByApiKey", reflect.TypeOf((*MockService)(nil).GetAccountByApiKey), arg0)
-}
-
-// SetApiKeyProvider mocks base method
-func (m *MockService) SetApiKeyProvider(arg0 priv.ApiKeyProvider) {
-	m.ctrl.Call(m, "SetApiKeyProvider", arg0)
-}
-
-// SetApiKeyProvider indicates an expected call of SetApiKeyProvider
-func (mr *MockServiceMockRecorder) SetApiKeyProvider(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetApiKeyProvider", reflect.TypeOf((*MockService)(nil).SetApiKeyProvider), arg0)
+// GetAccount indicates an expected call of GetAccount
+func (mr *MockServiceMockRecorder) GetAccount(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccount", reflect.TypeOf((*MockService)(nil).GetAccount), arg0)
 }

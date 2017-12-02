@@ -6,11 +6,13 @@ import (
 	"flag"
 	"github.com/acoustid/priv"
 	_ "github.com/lib/pq"
+	"github.com/patrickmn/go-cache"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -24,8 +26,19 @@ func main() {
 		log.Fatal(err)
 	}
 
+	auth := os.Getenv("ACOUSTID_PRIV_AUTH")
+	if auth == "" {
+		auth = "disabled"
+	}
+
+	authUsername := os.Getenv("ACOUSTID_PRIV_AUTH_USER")
+	authPassword := os.Getenv("ACOUSTID_PRIV_AUTH_PASSWORD")
+
 	flag.StringVar(&addr, "bind", addr, "Address on which the server should listen")
 	flag.StringVar(&databaseURL, "db", databaseURL, "PostgreSQL URL")
+	flag.StringVar(&auth, "auth", auth, "Authentication method (disabled, password, acoustid-biz)")
+	flag.StringVar(&authUsername, "user", authUsername, "Username for password authentication")
+	flag.StringVar(&authPassword, "password", authPassword, "Password for password authentication")
 	flag.Parse()
 
 	db, err := sql.Open("postgres", databaseURL)
@@ -34,9 +47,15 @@ func main() {
 	}
 
 	service := priv.NewService(db)
-	service.SetApiKeyProvider(&priv.AcoustidBizApiKeyProvider{})
-
 	handler := priv.NewAPI(service)
+
+	if auth == "password" {
+		handler.Auth = &priv.PasswordAuth{authUsername, authPassword}
+	} else if auth == "acoustid-biz" {
+		authenticator := priv.NewAcoustidBizAuth()
+		authenticator.Cache = cache.New(time.Hour, time.Minute*10)
+		handler.Auth = authenticator
+	}
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

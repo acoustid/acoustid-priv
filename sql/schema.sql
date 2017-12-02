@@ -1,14 +1,12 @@
 BEGIN;
 
 CREATE TABLE account (
-    id serial PRIMARY KEY
+    id          serial PRIMARY KEY,
+    external_id text NOT NULL
 );
 
-CREATE TABLE api_key (
-    api_key    text PRIMARY KEY,
-    account_id int  REFERENCES account (id),
-    expires_at timestamp with time zone
-);
+CREATE UNIQUE INDEX account_idx_external_id
+    ON account (external_id);
 
 CREATE TABLE catalog (
     id         serial PRIMARY KEY,
