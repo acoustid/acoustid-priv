@@ -74,7 +74,7 @@ func TestApi_ListCatalogs(t *testing.T) {
 	service.EXPECT().GetAccount(gomock.Any()).Return(account, nil)
 
 	api := priv.NewAPI(service)
-	status, body := makeRequest(t, api, "GET", "/", nil)
+	status, body := makeRequest(t, api, "GET", "/v1/priv", nil)
 	assert.Equal(t, http.StatusOK, status)
 	assert.JSONEq(t, `{"catalogs": [{"catalog": "cat1"}, {"catalog": "cat2"}]}`, body)
 }
@@ -93,7 +93,7 @@ func TestApi_ListCatalogs_Empty(t *testing.T) {
 	service.EXPECT().GetAccount(gomock.Any()).Return(account, nil)
 
 	api := priv.NewAPI(service)
-	status, body := makeRequest(t, api, "GET", "/", nil)
+	status, body := makeRequest(t, api, "GET", "/v1/priv", nil)
 	assert.Equal(t, http.StatusOK, status)
 	assert.JSONEq(t, `{"catalogs": []}`, body)
 }
@@ -106,7 +106,7 @@ func TestApi_DeleteCatalog(t *testing.T) {
 	catalog.EXPECT().DeleteCatalog().Return(nil)
 
 	api := priv.NewAPI(service)
-	status, body := makeRequest(t, api, "DELETE", "/cat1", nil)
+	status, body := makeRequest(t, api, "DELETE", "/v1/priv/cat1", nil)
 	assert.Equal(t, http.StatusOK, status)
 	assert.JSONEq(t, `{"catalog": "cat1"}`, body)
 }
@@ -119,7 +119,7 @@ func TestApi_DeleteCatalog_Error(t *testing.T) {
 	catalog.EXPECT().DeleteCatalog().Return(errors.New("failed"))
 
 	api := priv.NewAPI(service)
-	status, body := makeRequest(t, api, "DELETE", "/cat1", nil)
+	status, body := makeRequest(t, api, "DELETE", "/v1/priv/cat1", nil)
 	assertHTTPInternalError(t, status, body)
 }
 
@@ -131,7 +131,7 @@ func TestApi_CreateCatalog(t *testing.T) {
 	catalog.EXPECT().CreateCatalog().Return(nil)
 
 	api := priv.NewAPI(service)
-	status, body := makeRequest(t, api, "PUT", "/cat1", nil)
+	status, body := makeRequest(t, api, "PUT", "/v1/priv/cat1", nil)
 	assert.Equal(t, http.StatusOK, status)
 	assert.JSONEq(t, `{"catalog": "cat1"}`, body)
 }
@@ -144,7 +144,7 @@ func TestApi_CreateCatalog_Error(t *testing.T) {
 	catalog.EXPECT().CreateCatalog().Return(errors.New("failed"))
 
 	api := priv.NewAPI(service)
-	status, body := makeRequest(t, api, "PUT", "/cat1", nil)
+	status, body := makeRequest(t, api, "PUT", "/v1/priv/cat1", nil)
 	assertHTTPInternalError(t, status, body)
 }
 
@@ -161,7 +161,7 @@ func TestApi_CreateAnonymousTrack(t *testing.T) {
 	require.NoError(t, err)
 
 	api := priv.NewAPI(service)
-	status, body := makeRequest(t, api, "POST", "/cat1", bytes.NewReader(requestBody))
+	status, body := makeRequest(t, api, "POST", "/v1/priv/cat1", bytes.NewReader(requestBody))
 	assert.Equal(t, http.StatusOK, status)
 	assert.JSONEq(t, `{"catalog": "cat1", "id": "track100"}`, body)
 }
@@ -178,7 +178,7 @@ func TestApi_CreateTrack(t *testing.T) {
 	require.NoError(t, err)
 
 	api := priv.NewAPI(service)
-	status, body := makeRequest(t, api, "PUT", "/cat1/track1", bytes.NewReader(requestBody))
+	status, body := makeRequest(t, api, "PUT", "/v1/priv/cat1/track1", bytes.NewReader(requestBody))
 	assert.Equal(t, http.StatusOK, status)
 	assert.JSONEq(t, `{"catalog": "cat1", "id": "track1"}`, body)
 }
@@ -195,7 +195,7 @@ func TestApi_CreateTrack_Error(t *testing.T) {
 	require.NoError(t, err)
 
 	api := priv.NewAPI(service)
-	status, body := makeRequest(t, api, "PUT", "/cat1/track1", bytes.NewReader(requestBody))
+	status, body := makeRequest(t, api, "PUT", "/v1/priv/cat1/track1", bytes.NewReader(requestBody))
 	assertHTTPInternalError(t, status, body)
 }
 
@@ -207,7 +207,7 @@ func TestApi_DeleteTrack(t *testing.T) {
 	catalog.EXPECT().DeleteTrack("track1").Return(nil)
 
 	api := priv.NewAPI(service)
-	status, body := makeRequest(t, api, "DELETE", "/cat1/track1", nil)
+	status, body := makeRequest(t, api, "DELETE", "/v1/priv/cat1/track1", nil)
 	assert.Equal(t, http.StatusOK, status)
 	assert.JSONEq(t, `{"catalog": "cat1", "id": "track1"}`, body)
 }
@@ -220,7 +220,7 @@ func TestApi_DeleteTrack_Error(t *testing.T) {
 	catalog.EXPECT().DeleteTrack("track1").Return(errors.New("failed"))
 
 	api := priv.NewAPI(service)
-	status, body := makeRequest(t, api, "DELETE", "/cat1/track1", nil)
+	status, body := makeRequest(t, api, "DELETE", "/v1/priv/cat1/track1", nil)
 	assertHTTPInternalError(t, status, body)
 }
 
@@ -255,7 +255,7 @@ func TestApi_Search(t *testing.T) {
 	require.NoError(t, err)
 
 	api := priv.NewAPI(service)
-	status, body := makeRequest(t, api, "POST", "/cat1/_search", bytes.NewReader(requestBody))
+	status, body := makeRequest(t, api, "POST", "/v1/priv/cat1/_search", bytes.NewReader(requestBody))
 	assert.Equal(t, http.StatusOK, status)
 	assert.JSONEq(t, `{"catalog": "cat1", "results": [{"id": "track1", "metadata": {"name": "Track 1"}, "match": {"position": 0, "duration": 17.580979}}]}`, body)
 }

@@ -40,17 +40,18 @@ func (s *API) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 func (s *API) createRouter() *mux.Router {
 	router := mux.NewRouter()
-	router.HandleFunc("/_health", s.HealthHandler)
-	router.Methods(http.MethodGet).Path("/").HandlerFunc(s.wrapHandler(s.ListCatalogsHandler))
-	router.Methods(http.MethodGet).Path("/{catalog}").HandlerFunc(s.wrapCatalogHandler(s.GetCatalogHandler))
-	router.Methods(http.MethodPut).Path("/{catalog}").HandlerFunc(s.wrapCatalogHandler(s.CreateCatalogHandler))
-	router.Methods(http.MethodDelete).Path("/{catalog}").HandlerFunc(s.wrapCatalogHandler(s.DeleteCatalogHandler))
-	router.Methods(http.MethodPost).Path("/{catalog}").HandlerFunc(s.wrapCatalogHandler(s.CreateAnonymousTrackHandler))
-	router.Methods(http.MethodPost).Path("/{catalog}/_search").HandlerFunc(s.wrapCatalogHandler(s.SearchHandler))
-	router.Methods(http.MethodPut).Path("/{catalog}/{track}").HandlerFunc(s.wrapTrackHandler(s.CreateTrackHandler))
-	router.Methods(http.MethodDelete).Path("/{catalog}/{track}").HandlerFunc(s.wrapTrackHandler(s.DeleteTrackHandler))
 	router.NotFoundHandler = http.HandlerFunc(s.NotFoundHandler)
 	router.MethodNotAllowedHandler = http.HandlerFunc(s.MethodNotAllowedHandler)
+	router.HandleFunc("/_health", s.HealthHandler)
+	v1 := router.PathPrefix("/v1/priv").Subrouter()
+	v1.Methods(http.MethodGet).Path("").HandlerFunc(s.wrapHandler(s.ListCatalogsHandler))
+	v1.Methods(http.MethodGet).Path("/{catalog}").HandlerFunc(s.wrapCatalogHandler(s.GetCatalogHandler))
+	v1.Methods(http.MethodPut).Path("/{catalog}").HandlerFunc(s.wrapCatalogHandler(s.CreateCatalogHandler))
+	v1.Methods(http.MethodDelete).Path("/{catalog}").HandlerFunc(s.wrapCatalogHandler(s.DeleteCatalogHandler))
+	v1.Methods(http.MethodPost).Path("/{catalog}").HandlerFunc(s.wrapCatalogHandler(s.CreateAnonymousTrackHandler))
+	v1.Methods(http.MethodPost).Path("/{catalog}/_search").HandlerFunc(s.wrapCatalogHandler(s.SearchHandler))
+	v1.Methods(http.MethodPut).Path("/{catalog}/{track}").HandlerFunc(s.wrapTrackHandler(s.CreateTrackHandler))
+	v1.Methods(http.MethodDelete).Path("/{catalog}/{track}").HandlerFunc(s.wrapTrackHandler(s.DeleteTrackHandler))
 	return router
 }
 
