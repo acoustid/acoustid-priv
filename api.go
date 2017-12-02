@@ -41,6 +41,7 @@ func (s *API) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func (s *API) createRouter() *mux.Router {
 	router := mux.NewRouter()
 	router.HandleFunc("/_health", s.HealthHandler)
+	router.Methods(http.MethodGet).Path("/").HandlerFunc(s.wrapHandler(s.ListCatalogsHandler))
 	router.Methods(http.MethodGet).Path("/{catalog}").HandlerFunc(s.wrapCatalogHandler(s.GetCatalogHandler))
 	router.Methods(http.MethodPut).Path("/{catalog}").HandlerFunc(s.wrapCatalogHandler(s.CreateCatalogHandler))
 	router.Methods(http.MethodDelete).Path("/{catalog}").HandlerFunc(s.wrapCatalogHandler(s.DeleteCatalogHandler))
@@ -110,6 +111,30 @@ func (s *API) wrapTrackHandler(handler func(w http.ResponseWriter, req *http.Req
 
 func (s *API) HealthHandler(w http.ResponseWriter, req *http.Request) {
 	writeResponseOK(w, struct{}{})
+}
+
+type ListCatalogsResponse struct {
+	Catalogs []ListCatalogsResponseCatalog `json:"catalogs"`
+}
+
+type ListCatalogsResponseCatalog struct {
+	Catalog string `json:"catalog"`
+}
+
+func (s *API) ListCatalogsHandler(w http.ResponseWriter, req *http.Request, repo Repository) {
+	catalogs, err := repo.ListCatalogs()
+	if err != nil {
+		log.Printf("Failed to list catalogs: %v", err)
+		writeResponseInternalError(w)
+		return
+	}
+
+	var resp ListCatalogsResponse
+	resp.Catalogs = make([]ListCatalogsResponseCatalog, len(catalogs))
+	for i, catalog := range catalogs {
+		resp.Catalogs[i].Catalog = catalog.Name()
+	}
+	writeResponseOK(w, &resp)
 }
 
 type CatalogResponse struct {

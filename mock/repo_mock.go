@@ -179,6 +179,19 @@ func (mr *MockRepositoryMockRecorder) Catalog(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Catalog", reflect.TypeOf((*MockRepository)(nil).Catalog), arg0)
 }
 
+// ListCatalogs mocks base method
+func (m *MockRepository) ListCatalogs() ([]priv.Catalog, error) {
+	ret := m.ctrl.Call(m, "ListCatalogs")
+	ret0, _ := ret[0].([]priv.Catalog)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListCatalogs indicates an expected call of ListCatalogs
+func (mr *MockRepositoryMockRecorder) ListCatalogs() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListCatalogs", reflect.TypeOf((*MockRepository)(nil).ListCatalogs))
+}
+
 // MockAccount is a mock of Account interface
 type MockAccount struct {
 	ctrl     *gomock.Controller

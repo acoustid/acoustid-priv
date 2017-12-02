@@ -54,6 +54,50 @@ func createMockCatalogService(ctrl *gomock.Controller) (*mock.MockService, *mock
 	return service, catalog
 }
 
+func TestApi_ListCatalogs(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	catalog1 := mock.NewMockCatalog(ctrl)
+	catalog1.EXPECT().Name().AnyTimes().Return("cat1")
+
+	catalog2 := mock.NewMockCatalog(ctrl)
+	catalog2.EXPECT().Name().AnyTimes().Return("cat2")
+
+	repo := mock.NewMockRepository(ctrl)
+	repo.EXPECT().ListCatalogs().Return([]priv.Catalog{catalog1, catalog2}, nil)
+
+	account := mock.NewMockAccount(ctrl)
+	account.EXPECT().Repository().Return(repo)
+
+	service := mock.NewMockService(ctrl)
+	service.EXPECT().GetAccount(gomock.Any()).Return(account, nil)
+
+	api := priv.NewAPI(service)
+	status, body := makeRequest(t, api, "GET", "/", nil)
+	assert.Equal(t, http.StatusOK, status)
+	assert.JSONEq(t, `{"catalogs": [{"catalog": "cat1"}, {"catalog": "cat2"}]}`, body)
+}
+
+func TestApi_ListCatalogs_Empty(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	repo := mock.NewMockRepository(ctrl)
+	repo.EXPECT().ListCatalogs().Return([]priv.Catalog{}, nil)
+
+	account := mock.NewMockAccount(ctrl)
+	account.EXPECT().Repository().Return(repo)
+
+	service := mock.NewMockService(ctrl)
+	service.EXPECT().GetAccount(gomock.Any()).Return(account, nil)
+
+	api := priv.NewAPI(service)
+	status, body := makeRequest(t, api, "GET", "/", nil)
+	assert.Equal(t, http.StatusOK, status)
+	assert.JSONEq(t, `{"catalogs": []}`, body)
+}
+
 func TestApi_DeleteCatalog(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
