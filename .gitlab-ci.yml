@@ -37,6 +37,11 @@ docker-image:
     - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
     - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG .
     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+    - VERSION=`echo $CI_COMMIT_TAG | sed s/^v//`
+    - if [ $VERSION != "" ]
+    - then
+    -   echo "tagged version $VERSION"
+    - fi
 
 .tpl-docker-latest-tag: &docker-latest-tag
   stage: docker2
