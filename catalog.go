@@ -45,7 +45,7 @@ type Catalog interface {
 
 	NewTrackID() string
 
-	CreateTrack(id string, fp *chromaprint.Fingerprint, meta Metadata) error
+	CreateTrack(id string, fp *chromaprint.Fingerprint, meta Metadata, allowDuplicate bool) (bool, error)
 	DeleteTrack(id string) error
 
 	Search(query *chromaprint.Fingerprint, opts *SearchOptions) (*SearchResults, error)
@@ -182,31 +182,52 @@ func (c *CatalogImpl) NewTrackID() string {
 	return uuid.NewV4().String()
 }
 
-func (c *CatalogImpl) CreateTrack(externalID string, fingerprint *chromaprint.Fingerprint, metadata Metadata) error {
+func (c *CatalogImpl) findTrackByFingerprintSHA1(tx *sql.Tx, fingerprintSHA1 []byte) (bool, error) {
+	query := fmt.Sprintf("SELECT count(*) FROM track_%d WHERE fingerprint_sha1 = $1", c.id)
+	row := tx.QueryRow(query, fingerprintSHA1)
+	var count int
+	err := row.Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func (c *CatalogImpl) CreateTrack(externalID string, fingerprint *chromaprint.Fingerprint, metadata Metadata, allowDuplicate bool) (bool, error) {
 	err := c.CreateCatalog()
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	tx, err := c.db.Begin()
 	if err != nil {
-		return errors.WithMessage(err, "failed to open transaction")
+		return false, errors.WithMessage(err, "failed to open transaction")
 	}
 	defer tx.Rollback()
 
 	deleted, err := c.deleteTrack(tx, externalID)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	fingerprintBytes := chromaprint.CompressFingerprint(*fingerprint)
 	fingerprintSHA1 := sha1.Sum(fingerprintBytes)
 
+	if !allowDuplicate {
+		exists, err := c.findTrackByFingerprintSHA1(tx, fingerprintSHA1[:])
+		if err != nil {
+			return false, err
+		}
+		if exists {
+			return false, nil
+		}
+	}
+
 	var metadataBytes *[]byte = nil
 	if metadata != nil {
 		data, err := json.Marshal(metadata)
 		if err != nil {
-			return errors.WithMessage(err, "failed to encode metadata")
+			return false, errors.WithMessage(err, "failed to encode metadata")
 		}
 		metadataBytes = &data
 	}
@@ -216,7 +237,7 @@ func (c *CatalogImpl) CreateTrack(externalID string, fingerprint *chromaprint.Fi
 	var internalID int
 	err = row.Scan(&internalID)
 	if err != nil {
-		return errors.WithMessage(err, "failed to insert track")
+		return false, errors.WithMessage(err, "failed to insert track")
 	}
 
 	segment := 0
@@ -229,14 +250,14 @@ func (c *CatalogImpl) CreateTrack(externalID string, fingerprint *chromaprint.Fi
 		query := fmt.Sprintf("INSERT INTO track_index_%d_%d (track_id, segment, values) VALUES ($1, $2, $3)", c.id, segment%NumIndexSegments)
 		_, err = tx.Exec(query, internalID, segment, pq.Array(values[i:i+n]))
 		if err != nil {
-			return errors.WithMessage(err, "failed to insert track index")
+			return false, errors.WithMessage(err, "failed to insert track index")
 		}
 		segment += 1
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return errors.WithMessage(err, "commit failed")
+		return false, errors.WithMessage(err, "commit failed")
 	}
 
 	if deleted {
@@ -244,8 +265,7 @@ func (c *CatalogImpl) CreateTrack(externalID string, fingerprint *chromaprint.Fi
 	} else {
 		log.Printf("Inserted track id=%v catalog=%s account_id=%v", externalID, c.name, c.repo.account.id)
 	}
-
-	return nil
+	return true, nil
 }
 
 func (c *CatalogImpl) deleteTrack(tx *sql.Tx, externalID string) (bool, error) {

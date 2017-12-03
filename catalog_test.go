@@ -103,8 +103,37 @@ func TestCatalog_CreateTrack(t *testing.T) {
 
 	fp, err := chromaprint.ParseFingerprintString(TestFingerprint)
 	require.NoError(t, err)
-	err = catalog.CreateTrack("fp1", fp, Metadata{"name": "Track 1"})
+	changed, err := catalog.CreateTrack("fp1", fp, Metadata{"name": "Track 1"}, false)
 	assert.NoError(t, err)
+	assert.Equal(t, true, changed)
+}
+
+func TestCatalog_CreateTrack_DisallowDuplicate(t *testing.T) {
+	catalog := getTestCatalog(t, true)
+
+	fp, err := chromaprint.ParseFingerprintString(TestFingerprint)
+	require.NoError(t, err)
+	changed, err := catalog.CreateTrack("fp1", fp, Metadata{"name": "Track 1"}, false)
+	assert.NoError(t, err)
+	assert.Equal(t, true, changed)
+
+	changed, err = catalog.CreateTrack("fp2", fp, Metadata{"name": "Track 2"}, false)
+	assert.NoError(t, err)
+	assert.Equal(t, false, changed)
+}
+
+func TestCatalog_CreateTrack_AllowDuplicate(t *testing.T) {
+	catalog := getTestCatalog(t, true)
+
+	fp, err := chromaprint.ParseFingerprintString(TestFingerprint)
+	require.NoError(t, err)
+	changed, err := catalog.CreateTrack("fp1", fp, Metadata{"name": "Track 1"}, true)
+	assert.NoError(t, err)
+	assert.Equal(t, true, changed)
+
+	changed, err = catalog.CreateTrack("fp2", fp, Metadata{"name": "Track 2"}, true)
+	assert.NoError(t, err)
+	assert.Equal(t, true, changed)
 }
 
 func TestCatalog_CreateTrack_Update(t *testing.T) {
@@ -112,13 +141,15 @@ func TestCatalog_CreateTrack_Update(t *testing.T) {
 
 	fp, err := chromaprint.ParseFingerprintString(TestFingerprint)
 	require.NoError(t, err)
-	err = catalog.CreateTrack("fp1", fp, Metadata{"name": "Track 1"})
+	changed, err := catalog.CreateTrack("fp1", fp, Metadata{"name": "Track 1"}, false)
 	assert.NoError(t, err)
+	assert.Equal(t, true, changed)
 
 	fp2, err := chromaprint.ParseFingerprintString(TestFingerprintQuery)
 	require.NoError(t, err)
-	err = catalog.CreateTrack("fp1", fp2, Metadata{"name": "Track 1.2"})
+	changed, err = catalog.CreateTrack("fp1", fp2, Metadata{"name": "Track 1.2"}, false)
 	assert.NoError(t, err)
+	assert.Equal(t, true, changed)
 }
 
 func TestCatalog_CreateTrack_CatalogDoesNotExist(t *testing.T) {
@@ -126,8 +157,9 @@ func TestCatalog_CreateTrack_CatalogDoesNotExist(t *testing.T) {
 
 	fp, err := chromaprint.ParseFingerprintString(TestFingerprint)
 	require.NoError(t, err)
-	err = catalog.CreateTrack("fp1", fp, nil)
+	changed, err := catalog.CreateTrack("fp1", fp, nil, false)
 	assert.NoError(t, err)
+	assert.Equal(t, true, changed)
 }
 
 func TestCatalog_DeleteTrack(t *testing.T) {
@@ -135,7 +167,7 @@ func TestCatalog_DeleteTrack(t *testing.T) {
 
 	fp, err := chromaprint.ParseFingerprintString(TestFingerprint)
 	require.NoError(t, err)
-	err = catalog.CreateTrack("fp1", fp, nil)
+	_, err = catalog.CreateTrack("fp1", fp, nil, false)
 	require.NoError(t, err)
 
 	err = catalog.DeleteTrack("fp1")
@@ -162,7 +194,7 @@ func TestCatalog_Search_NoStream_NoMatch1(t *testing.T) {
 	masterID := "t1"
 	masterFP := loadTestFingerprint(t, "calibre_sunrise")
 	masterMetadata := Metadata{"title": "Sunrise", "artist": "Calibre"}
-	err := catalog.CreateTrack(masterID, masterFP, masterMetadata)
+	_, err := catalog.CreateTrack(masterID, masterFP, masterMetadata, false)
 	require.NoError(t, err)
 
 	queryFP := loadTestFingerprint(t, "radio1_1_ad")
@@ -180,7 +212,7 @@ func TestCatalog_Search_Stream_NoMatch(t *testing.T) {
 	masterID := "t1"
 	masterFP := loadTestFingerprint(t, "calibre_sunrise")
 	masterMetadata := Metadata{"title": "Sunrise", "artist": "Calibre"}
-	err := catalog.CreateTrack(masterID, masterFP, masterMetadata)
+	_, err := catalog.CreateTrack(masterID, masterFP, masterMetadata, false)
 	require.NoError(t, err)
 
 	queryFP := loadTestFingerprint(t, "radio1_1_ad")
@@ -198,7 +230,7 @@ func TestCatalog_Search_Stream_PartialMatch(t *testing.T) {
 	masterID := "t1"
 	masterFP := loadTestFingerprint(t, "calibre_sunrise")
 	masterMetadata := Metadata{"title": "Sunrise", "artist": "Calibre"}
-	err := catalog.CreateTrack(masterID, masterFP, masterMetadata)
+	_, err := catalog.CreateTrack(masterID, masterFP, masterMetadata, false)
 	require.NoError(t, err)
 
 	queryFP := loadTestFingerprint(t, "radio1_2_ad_and_calibre_sunshine")
@@ -221,7 +253,7 @@ func TestCatalog_Search_Stream_FullMatch(t *testing.T) {
 	masterID := "t1"
 	masterFP := loadTestFingerprint(t, "calibre_sunrise")
 	masterMetadata := Metadata{"title": "Sunrise", "artist": "Calibre"}
-	err := catalog.CreateTrack(masterID, masterFP, masterMetadata)
+	_, err := catalog.CreateTrack(masterID, masterFP, masterMetadata, false)
 	require.NoError(t, err)
 
 	queryFP := loadTestFingerprint(t, "radio1_3_calibre_sunshine")

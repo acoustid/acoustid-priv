@@ -4,16 +4,17 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/acoustid/go-acoustid/chromaprint"
 	"github.com/acoustid/priv"
 	"github.com/acoustid/priv/mock"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"io"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 const testFingerprint = "AQAAZFKYSFKYofGJj0IOUTRy_AgTch1axYidILR0mFENmcdxfEiL9jiuH8089EJ7-B3yQexzVFWOboeI60h_HHWMHiZ3hCwLXTzy4JTxRsfX4cqI45IpInTCIL1x9EZEbcd7tJVhDfrxwzt8HD3-D9p2XDq0D0cY0agV_EKL78dPPBeC7byQv0IdHUdzdD_wO8g5QeOPtBX66EFn2Jpx5Ucz_Th2ovkMPrgaycgOGVtjI19x_DiR_gAAyHFGUJGgUAAw4JQBQDAHCUIKEIKQEBA4gpFyyEiEACSgEQCIMVYyIwBQwiiBBDFIG0QIEY4AQAAAGgkEnHFXaCQA"
@@ -173,7 +174,7 @@ func TestApi_CreateAnonymousTrack(t *testing.T) {
 
 	service, catalog := createMockCatalogService(ctrl)
 	catalog.EXPECT().NewTrackID().Return("track100")
-	catalog.EXPECT().CreateTrack("track100", gomock.Any(), gomock.Any()).Return(nil)
+	catalog.EXPECT().CreateTrack("track100", gomock.Any(), gomock.Any(), false).Return(true, nil)
 
 	request := priv.CreateTrackRequest{Fingerprint: testFingerprint}
 	requestBody, err := json.Marshal(request)
@@ -190,9 +191,43 @@ func TestApi_CreateTrack(t *testing.T) {
 	defer ctrl.Finish()
 
 	service, catalog := createMockCatalogService(ctrl)
-	catalog.EXPECT().CreateTrack("track1", gomock.Any(), gomock.Any()).Return(nil)
+	catalog.EXPECT().CreateTrack("track1", gomock.Any(), gomock.Any(), false).Return(true, nil)
 
 	request := priv.CreateTrackRequest{Fingerprint: testFingerprint}
+	requestBody, err := json.Marshal(request)
+	require.NoError(t, err)
+
+	api := priv.NewAPI(service)
+	status, body := makeRequest(t, api, "PUT", "/v1/priv/cat1/track1", bytes.NewReader(requestBody))
+	assert.Equal(t, http.StatusOK, status)
+	assert.JSONEq(t, `{"catalog": "cat1", "id": "track1"}`, body)
+}
+
+func TestApi_CreateTrack_Conflict(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	service, catalog := createMockCatalogService(ctrl)
+	catalog.EXPECT().CreateTrack("track1", gomock.Any(), gomock.Any(), false).Return(false, nil)
+
+	request := priv.CreateTrackRequest{Fingerprint: testFingerprint}
+	requestBody, err := json.Marshal(request)
+	require.NoError(t, err)
+
+	api := priv.NewAPI(service)
+	status, body := makeRequest(t, api, "PUT", "/v1/priv/cat1/track1", bytes.NewReader(requestBody))
+	assert.Equal(t, http.StatusConflict, status)
+	assert.JSONEq(t, `{"status":409,"error":{"type":"duplicate","reason":"Duplicate fingerprint, use allow_duplicate=false if you want to add it anyway"}}`, body)
+}
+
+func TestApi_CreateTrack_AllowDuplicate(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	service, catalog := createMockCatalogService(ctrl)
+	catalog.EXPECT().CreateTrack("track1", gomock.Any(), gomock.Any(), true).Return(true, nil)
+
+	request := priv.CreateTrackRequest{Fingerprint: testFingerprint, AllowDuplicate: true}
 	requestBody, err := json.Marshal(request)
 	require.NoError(t, err)
 
@@ -207,7 +242,7 @@ func TestApi_CreateTrack_Error(t *testing.T) {
 	defer ctrl.Finish()
 
 	service, catalog := createMockCatalogService(ctrl)
-	catalog.EXPECT().CreateTrack("track1", gomock.Any(), gomock.Any()).Return(errors.New("failed"))
+	catalog.EXPECT().CreateTrack("track1", gomock.Any(), gomock.Any(), false).Return(false, errors.New("failed"))
 
 	request := priv.CreateTrackRequest{Fingerprint: testFingerprint}
 	requestBody, err := json.Marshal(request)

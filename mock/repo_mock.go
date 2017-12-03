@@ -5,8 +5,8 @@
 package mock
 
 import (
-	chromaprint "github.com/acoustid/go-acoustid/chromaprint"
 	priv "github.com/acoustid/priv"
+	chromaprint "github.com/acoustid/go-acoustid/chromaprint"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -47,15 +47,16 @@ func (mr *MockCatalogMockRecorder) CreateCatalog() *gomock.Call {
 }
 
 // CreateTrack mocks base method
-func (m *MockCatalog) CreateTrack(arg0 string, arg1 *chromaprint.Fingerprint, arg2 priv.Metadata) error {
-	ret := m.ctrl.Call(m, "CreateTrack", arg0, arg1, arg2)
-	ret0, _ := ret[0].(error)
-	return ret0
+func (m *MockCatalog) CreateTrack(arg0 string, arg1 *chromaprint.Fingerprint, arg2 priv.Metadata, arg3 bool) (bool, error) {
+	ret := m.ctrl.Call(m, "CreateTrack", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // CreateTrack indicates an expected call of CreateTrack
-func (mr *MockCatalogMockRecorder) CreateTrack(arg0, arg1, arg2 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTrack", reflect.TypeOf((*MockCatalog)(nil).CreateTrack), arg0, arg1, arg2)
+func (mr *MockCatalogMockRecorder) CreateTrack(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTrack", reflect.TypeOf((*MockCatalog)(nil).CreateTrack), arg0, arg1, arg2, arg3)
 }
 
 // DeleteCatalog mocks base method

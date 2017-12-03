@@ -150,6 +150,7 @@ returned from the search API. You can use it for identification if you don't hav
 | --- | --- | --- |
 | fingerprint | string | Audio fingerprint of the whole song. |
 | metadata | complex | JSON object with your own metadata. |
+| allow_duplicate | bool | Allow duplicate fingerprint to be added to the catalog. Default: false |
 
 #### Sample request
 
@@ -250,8 +251,8 @@ somewhere in the middle. This is useful for catalog deduplication.
 
 | Name | Data Type | Description |
 | --- | --- | --- |
-| stream | boolean | Whether this identification of a part of an audio stream, or an song. |
 | fingerprint | string | Audio fingerprint to search for. |
+| stream | boolean | Whether this identification of a part of an audio stream, or an song. Default: false |
 
 #### Sample request
 

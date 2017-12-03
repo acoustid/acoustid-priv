@@ -6,11 +6,11 @@ import (
 	"github.com/acoustid/go-acoustid/chromaprint"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"sync/atomic"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Error struct {
@@ -200,8 +200,9 @@ type TrackResponse struct {
 }
 
 type CreateTrackRequest struct {
-	Fingerprint string            `json:"fingerprint"`
-	Metadata    map[string]string `json:"metadata"`
+	Fingerprint    string            `json:"fingerprint"`
+	Metadata       map[string]string `json:"metadata"`
+	AllowDuplicate bool              `json:"allow_duplicate"`
 }
 
 func unmarshalRequestJSON(req *http.Request, v interface{}) error {
@@ -233,10 +234,16 @@ func (s *API) CreateTrackHandler(w http.ResponseWriter, request *http.Request, c
 		return
 	}
 
-	err = catalog.CreateTrack(trackID, fingerprint, data.Metadata)
+	created, err := catalog.CreateTrack(trackID, fingerprint, data.Metadata, data.AllowDuplicate)
 	if err != nil {
 		log.Printf("Failed to create track %s/%s: %v", catalog.Name(), trackID, err)
 		writeResponseInternalError(w)
+		return
+	}
+
+	if !created {
+		message := "Duplicate fingerprint, use allow_duplicate=false if you want to add it anyway"
+		writeResponseError(w, http.StatusConflict, Error{"duplicate", message})
 		return
 	}
 
