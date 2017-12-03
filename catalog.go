@@ -13,6 +13,7 @@ import (
 	"log"
 	"sort"
 	"sync"
+	"time"
 )
 
 const SearchConcurrency = 8
@@ -399,6 +400,14 @@ func (c *CatalogImpl) Search(queryFP *chromaprint.Fingerprint, opts *SearchOptio
 		opts = &SearchOptions{}
 	}
 
+	started := time.Now()
+
+	searchType := "normal"
+	if opts.Stream {
+		searchType = "stream"
+	}
+	searchCount.WithLabelValues(searchType).Inc()
+
 	tx, err := c.db.BeginTx(context.Background(), &sql.TxOptions{ReadOnly: true})
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to open transaction")
@@ -487,6 +496,8 @@ func (c *CatalogImpl) Search(queryFP *chromaprint.Fingerprint, opts *SearchOptio
 		}
 		results.Results = append(results.Results, result)
 	}
+
+	searchDuration.WithLabelValues(searchType).Observe(time.Since(started).Seconds())
 
 	return results, nil
 }

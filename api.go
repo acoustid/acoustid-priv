@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"sync/atomic"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Error struct {
@@ -46,6 +47,7 @@ func (s *API) createRouter() *mux.Router {
 	router.NotFoundHandler = http.HandlerFunc(s.NotFoundHandler)
 	router.MethodNotAllowedHandler = http.HandlerFunc(s.MethodNotAllowedHandler)
 	router.HandleFunc("/_health", s.HealthHandler)
+	router.Handle("/_metrics", promhttp.Handler())
 	v1 := router.PathPrefix("/v1/priv").Subrouter()
 	v1.Methods(http.MethodGet).Path("").HandlerFunc(s.wrapHandler(s.ListCatalogsHandler))
 	v1.Methods(http.MethodGet).Path("/{catalog}").HandlerFunc(s.wrapCatalogHandler(s.GetCatalogHandler))
