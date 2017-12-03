@@ -14,5 +14,5 @@ docker push $CI_REGISTRY_IMAGE:$VERSION
 
 if [ -n "$CI_COMMIT_TAG" ]
 then
-    $(dirname $0)/lag-latest-image.sh
+    $(dirname $0)/tag-latest-image.sh
 fi
