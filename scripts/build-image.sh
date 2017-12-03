@@ -4,7 +4,7 @@ set -ex
 
 if [ -n "$CI_COMMIT_TAG" ]
 then
-  VERSION=$(echo "$CI_COMMIT_TAG" | sed 's/^v/')
+  VERSION=$(echo "$CI_COMMIT_TAG" | sed 's/^v//')
 else
   VERSION=$CI_COMMIT_REF_SLUG
 fi
