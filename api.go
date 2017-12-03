@@ -161,6 +161,19 @@ type CatalogResponse struct {
 	Catalog string `json:"catalog"`
 }
 
+type ListTracksResponse struct {
+	Catalog string                    `json:"catalog"`
+	Tracks  []ListTracksResponseTrack `json:"tracks"`
+	HasMore bool                      `json:"has_more"`
+	Cursor  string                    `json:"cursor,omitempty"`
+}
+
+type ListTracksResponseTrack struct {
+	ID          string   `json:"id"`
+	Metadata    Metadata `json:"metadata,omitempty"`
+	Fingerprint string   `json:"fingerprint,omitempty"`
+}
+
 func (s *API) GetCatalogHandler(w http.ResponseWriter, request *http.Request, catalog Catalog) {
 	exists, err := catalog.Exists()
 	if err != nil {
@@ -172,7 +185,37 @@ func (s *API) GetCatalogHandler(w http.ResponseWriter, request *http.Request, ca
 		writeResponseError(w, http.StatusNotFound, Error{"not_found", "Catalog not found"})
 		return
 	}
-	writeResponseOK(w, &CatalogResponse{catalog.Name()})
+
+	query := request.URL.Query()
+	if len(query["tracks"]) == 0 {
+		writeResponseOK(w, &CatalogResponse{catalog.Name()})
+		return
+	}
+
+	lastTrackID := query.Get("cursor")
+	results, err := catalog.ListTracks(lastTrackID, 100)
+	if err != nil {
+		log.Printf("Failed to list tracks in catalog %s: %v", catalog.Name(), err)
+		writeResponseInternalError(w)
+		return
+	}
+
+	response := &ListTracksResponse{
+		Catalog: catalog.Name(),
+		HasMore: results.HasMore,
+		Tracks: make([]ListTracksResponseTrack, len(results.Tracks)),
+	}
+
+	if results.HasMore {
+		response.Cursor = results.Tracks[len(results.Tracks)-1].ID
+	}
+
+	for i, track := range results.Tracks {
+		response.Tracks[i].ID = track.ID
+		response.Tracks[i].Metadata = track.Metadata
+	}
+
+	writeResponseOK(w, response)
 }
 
 func (s *API) CreateCatalogHandler(w http.ResponseWriter, request *http.Request, catalog Catalog) {

@@ -308,6 +308,96 @@ func TestApi_GetTrack_NoMetadata(t *testing.T) {
 	assert.JSONEq(t, `{"catalog":"cat1","id":"track1"}`, body)
 }
 
+func TestApi_GetCatalog(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	service, catalog := createMockCatalogService(ctrl)
+	catalog.EXPECT().Exists().Return(true, nil)
+
+	api := priv.NewAPI(service)
+	status, body := makeRequest(t, api, "GET", "/v1/priv/cat1", nil)
+	assert.Equal(t, http.StatusOK, status)
+	assert.JSONEq(t, `{"catalog":"cat1"}`, body)
+}
+
+func TestApi_GetCatalog_DoesNotExist(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	service, catalog := createMockCatalogService(ctrl)
+	catalog.EXPECT().Exists().Return(false, nil)
+
+	api := priv.NewAPI(service)
+	status, body := makeRequest(t, api, "GET", "/v1/priv/cat1", nil)
+	assert.Equal(t, http.StatusNotFound, status)
+	assert.JSONEq(t, `{"status":404,"error":{"type":"not_found","reason":"Catalog not found"}}`, body)
+}
+
+func TestApi_GetCatalog_ListTracks(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	service, catalog := createMockCatalogService(ctrl)
+	catalog.EXPECT().Exists().Return(true, nil)
+	catalog.EXPECT().ListTracks("", 100).Return(&priv.ListTracksResult{
+		HasMore: true,
+		Tracks: []priv.TrackDetails{
+			{
+				ID:       "track1",
+				Metadata: priv.Metadata{"title": "Track 1"},
+			},
+			{
+				ID:       "track2",
+				Metadata: priv.Metadata{"title": "Track 2"},
+			},
+		},
+	}, nil)
+
+	api := priv.NewAPI(service)
+	status, body := makeRequest(t, api, "GET", "/v1/priv/cat1?tracks", nil)
+	assert.Equal(t, http.StatusOK, status)
+	assert.JSONEq(t, `{"catalog":"cat1","tracks":[{"id":"track1","metadata":{"title":"Track 1"}},{"id":"track2","metadata":{"title":"Track 2"}}],"has_more":true,"cursor":"track2"}`, body)
+}
+
+func TestApi_GetCatalog_ListTracks_More(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	service, catalog := createMockCatalogService(ctrl)
+	catalog.EXPECT().Exists().Return(true, nil)
+	catalog.EXPECT().ListTracks("track100", 100).Return(&priv.ListTracksResult{
+		HasMore: false,
+		Tracks: []priv.TrackDetails{
+			{
+				ID:       "track101",
+				Metadata: priv.Metadata{"title": "Track 101"},
+			},
+		},
+	}, nil)
+
+	api := priv.NewAPI(service)
+	status, body := makeRequest(t, api, "GET", "/v1/priv/cat1?tracks&cursor=track100", nil)
+	assert.Equal(t, http.StatusOK, status)
+	assert.JSONEq(t, `{"catalog":"cat1","tracks":[{"id":"track101","metadata":{"title":"Track 101"}}],"has_more":false}`, body)
+}
+
+func TestApi_GetCatalog_ListTracks_Empty(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	service, catalog := createMockCatalogService(ctrl)
+	catalog.EXPECT().Exists().Return(true, nil)
+	catalog.EXPECT().ListTracks("", 100).Return(&priv.ListTracksResult{
+		HasMore: false,
+	}, nil)
+
+	api := priv.NewAPI(service)
+	status, body := makeRequest(t, api, "GET", "/v1/priv/cat1?tracks", nil)
+	assert.Equal(t, http.StatusOK, status)
+	assert.JSONEq(t, `{"catalog":"cat1","tracks":[],"has_more":false}`, body)
+}
+
 func TestApi_Search(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

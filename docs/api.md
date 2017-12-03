@@ -4,19 +4,19 @@ This AcoustID API allow you to maintain and search in your own catalog of songs.
 
 ## Table of Contents
 
-* [Endpoints](#endpoints)
-  * [Create Catalog](#create-catalog)
-  * [Delete Catalog](#delete-catalog)
-  * [Get Catalog Details](#get-catalog-details)
-  * [List Catalogs](#list-catalogs)
-  * [Add or Update Track](#add-or-update-track)
-  * [Delete Track](#delete-track)
-  * [Get Track Details](#get-track-details)
-  * [Search](#search)
-* [Conventions](#conventions)
-  * [Authentication](#authentication)
-  * [Error Handling](#error-handling)
-* [Code Example](#code-example)
+  * [Endpoints](#endpoints)
+     * [Create Catalog](#create-catalog)
+     * [Delete Catalog](#delete-catalog)
+     * [List Catalogs](#list-catalogs)
+     * [Get Catalog Details / List Tracks](#get-catalog-details--list-tracks)
+     * [Add Track / Update Track](#add-track--update-track)
+     * [Delete Track](#delete-track)
+     * [Get Track Details](#get-track-details)
+     * [Search](#search)
+  * [Conventions](#conventions)
+     * [Authentication](#authentication)
+     * [Error Handling](#error-handling)
+  * [Code Example](#code-example)
 
 
 ## Endpoints
@@ -76,34 +76,6 @@ None
 
 
 
-### Get Catalog Details
-
-Get details about a catalog.
-
-#### Endpoint
-
-    GET /v1/priv/{catalog}
-
-#### Parameters
-
-None
-
-#### Sample request
-
-    GET https://api.acoustid.biz/v1/priv/prod-music
-
-#### Sample response
-
-```json
-{
-  "catalog": "prod-music",
-  "tracks": {
-    "count": 1000
-  }
-}
-```
-
-
 
 ### List Catalogs
 
@@ -132,7 +104,55 @@ None
 }
 ```
 
-### Add or Update Track
+
+### Get Catalog Details / List Tracks
+
+Get details about a catalog, or list tracks in a catalog.
+
+#### Endpoint
+
+    GET /v1/priv/{catalog}
+
+#### Parameters
+
+
+| Name | Data Type | Description |
+| --- | --- | --- |
+| tracks | bool | Whether to lists tracks. |
+| cursor | string | Cursor token from the last object when requesting the next page. |
+
+#### Sample request
+
+    GET https://api.acoustid.biz/v1/priv/prod-music?tracks=1
+
+#### Sample response
+
+```json
+{
+  "catalog": "prod-music",
+  "tracks": [
+    {
+      "id": "track1",  
+      "metadata": {
+        "title": "Song title",
+        "author": "Song author"
+      }
+    },
+    {
+      "id": "track2",  
+      "metadata": {
+        "title": "Another song title",
+        "author": "Another song author"
+      }
+    }
+    // ...
+  ],
+  "has_more": true,
+  "cursor": "xyz"
+}
+```
+
+### Add Track / Update Track
 
 Add a new track to the catalog, or update an existing track.
 You can provide your own track ID or let the system generate one for you.

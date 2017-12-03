@@ -213,6 +213,50 @@ func TestCatalog_GetTrack_DoesNotExist(t *testing.T) {
 	assert.Empty(t, results.Results)
 }
 
+func TestCatalog_ListTracks_Empty(t *testing.T) {
+	catalog := getTestCatalog(t, true)
+
+	result, err := catalog.ListTracks("", 10)
+	if assert.NoError(t, err) {
+		assert.False(t, result.HasMore)
+		assert.Empty(t, result.Tracks)
+	}
+}
+
+func TestCatalog_ListTracks(t *testing.T) {
+	catalog := getTestCatalog(t, true)
+
+	fp, err := chromaprint.ParseFingerprintString(TestFingerprint)
+	require.NoError(t, err)
+
+	_, err = catalog.CreateTrack("fp1", fp, Metadata{"name": "Track 1"}, true)
+	require.NoError(t, err)
+
+	_, err = catalog.CreateTrack("fp2", fp, Metadata{"name": "Track 2"}, true)
+	require.NoError(t, err)
+
+	_, err = catalog.CreateTrack("fp3", fp, Metadata{"name": "Track 3"}, true)
+	require.NoError(t, err)
+
+	result, err := catalog.ListTracks("", 2)
+	if assert.NoError(t, err) {
+		assert.True(t, result.HasMore)
+		assert.Equal(t, 2, len(result.Tracks))
+		assert.Equal(t, "fp1", result.Tracks[0].ID)
+		assert.Equal(t, "fp2", result.Tracks[1].ID)
+		assert.Equal(t, Metadata{"name": "Track 1"}, result.Tracks[0].Metadata)
+		assert.Equal(t, Metadata{"name": "Track 2"}, result.Tracks[1].Metadata)
+	}
+
+	result, err = catalog.ListTracks(result.Tracks[len(result.Tracks)-1].ID, 2)
+	if assert.NoError(t, err) {
+		assert.False(t, result.HasMore)
+		assert.Equal(t, 1, len(result.Tracks))
+		assert.Equal(t, "fp3", result.Tracks[0].ID)
+		assert.Equal(t, Metadata{"name": "Track 3"}, result.Tracks[0].Metadata)
+	}
+}
+
 func TestCatalog_Search_NoStream_NoMatch1(t *testing.T) {
 	catalog := getTestCatalog(t, true)
 

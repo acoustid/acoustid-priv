@@ -34,6 +34,17 @@ type SearchResult struct {
 	Match    *MatchResult
 }
 
+type ListTracksResult struct {
+	HasMore bool
+	Tracks []TrackDetails
+}
+
+type TrackDetails struct {
+	ID string
+	Metadata Metadata
+	Fingerprint *chromaprint.Fingerprint
+}
+
 type Metadata map[string]string
 
 type Catalog interface {
@@ -48,6 +59,8 @@ type Catalog interface {
 	GetTrack(id string) (*SearchResults, error)
 	CreateTrack(id string, fp *chromaprint.Fingerprint, meta Metadata, allowDuplicate bool) (bool, error)
 	DeleteTrack(id string) error
+
+	ListTracks(lastTrackID string, limit int) (*ListTracksResult, error)
 
 	Search(query *chromaprint.Fingerprint, opts *SearchOptions) (*SearchResults, error)
 }
@@ -557,4 +570,49 @@ func (c *CatalogImpl) GetTrack(externalID string) (*SearchResults, error) {
 	}
 	results.Results = append(results.Results, result)
 	return results, nil
+}
+
+func (c *CatalogImpl) ListTracks(lastTrackID string, limit int) (*ListTracksResult, error) {
+	tx, err := c.db.BeginTx(context.Background(), &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to open transaction")
+	}
+	defer tx.Rollback()
+
+	result := &ListTracksResult{}
+
+	exists, err := c.checkCatalog(tx)
+	if !exists {
+		return result, nil
+	}
+
+	query := fmt.Sprintf("SELECT external_id, metadata FROM track_%d WHERE external_id > $1 ORDER BY external_id LIMIT $2", c.id)
+	rows, err := tx.Query(query, lastTrackID, limit+1)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to fetch tracks")
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var trackID string
+		var metadataBytes json.RawMessage
+		err = rows.Scan(&trackID, &metadataBytes)
+		if err != nil {
+			return nil, errors.WithMessage(err, "failed to fetch tracks")
+		}
+		if len(result.Tracks) == limit {
+			result.HasMore = true
+			break
+		}
+		track := TrackDetails{ID: trackID}
+		if metadataBytes != nil {
+			err = json.Unmarshal(metadataBytes, &track.Metadata)
+			if err != nil {
+				return nil, errors.WithMessage(err, "failed to parse metadata JSON")
+			}
+		}
+		result.Tracks = append(result.Tracks, track)
+	}
+
+	return result, nil
 }
