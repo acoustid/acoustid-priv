@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"sync/atomic"
 )
 
 type Error struct {
@@ -25,12 +26,14 @@ type API struct {
 	service Service
 	router  *mux.Router
 	Auth    Authenticator
+	status  int32
 }
 
 func NewAPI(service Service) *API {
 	s := &API{service: service}
 	s.router = s.createRouter()
 	s.Auth = &NoAuth{}
+	s.SetHealthStatus(true)
 	return s
 }
 
@@ -110,8 +113,21 @@ func (s *API) wrapTrackHandler(handler func(w http.ResponseWriter, req *http.Req
 	})
 }
 
+func (s *API) SetHealthStatus(status bool) {
+	var value int32
+	if status {
+		value = 1
+	}
+	atomic.StoreInt32(&s.status, value)
+}
+
 func (s *API) HealthHandler(w http.ResponseWriter, req *http.Request) {
-	writeResponseOK(w, struct{}{})
+	status := atomic.LoadInt32(&s.status)
+	if status == 0 {
+		writeResponseError(w, http.StatusServiceUnavailable, Error{"unavailable", "Service is unavailable"})
+	} else {
+		writeResponseOK(w, struct{}{})
+	}
 }
 
 type ListCatalogsResponse struct {

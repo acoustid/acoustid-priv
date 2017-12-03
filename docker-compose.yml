@@ -40,6 +40,7 @@ services:
     environment:
       ACOUSTID_PRIV_DB_HOST: postgres
       ACOUSTID_PRIV_DB_NAME: acoustid_priv
+      ACOUSTID_PRIV_SHUTDOWN_DELAY: 1s
     depends_on:
       - postgres
 

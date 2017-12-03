@@ -33,9 +33,28 @@ func TestApi_Health(t *testing.T) {
 	service := mock.NewMockService(ctrl)
 
 	api := priv.NewAPI(service)
-	status, body := makeRequest(t, api, "GET", "/_health", nil)
-	assert.Equal(t, http.StatusOK, status)
-	assert.JSONEq(t, `{}`, body)
+
+	{
+		status, body := makeRequest(t, api, "GET", "/_health", nil)
+		assert.Equal(t, http.StatusOK, status)
+		assert.JSONEq(t, `{}`, body)
+	}
+
+	api.SetHealthStatus(false)
+
+	{
+		status, body := makeRequest(t, api, "GET", "/_health", nil)
+		assert.Equal(t, http.StatusServiceUnavailable, status)
+		assert.JSONEq(t, `{"status":503,"error":{"type":"unavailable","reason":"Service is unavailable"}}`, body)
+	}
+
+	api.SetHealthStatus(true)
+
+	{
+		status, body := makeRequest(t, api, "GET", "/_health", nil)
+		assert.Equal(t, http.StatusOK, status)
+		assert.JSONEq(t, `{}`, body)
+	}
 }
 
 func createMockCatalogService(ctrl *gomock.Controller) (*mock.MockService, *mock.MockCatalog) {

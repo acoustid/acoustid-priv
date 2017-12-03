@@ -34,11 +34,22 @@ func main() {
 	authUsername := os.Getenv("ACOUSTID_PRIV_AUTH_USER")
 	authPassword := os.Getenv("ACOUSTID_PRIV_AUTH_PASSWORD")
 
+	shutdownDelay := time.Millisecond * 100
+	shutdownDelayStr := os.Getenv("ACOUSTID_PRIV_SHUTDOWN_DELAY")
+	if shutdownDelayStr != "" {
+		d, err := time.ParseDuration(shutdownDelayStr)
+		if err != nil {
+			log.Fatalf("Error while parsing ACOUSTID_PRIV_SHUTDOWN_DELAY: %v", err)
+		}
+		shutdownDelay = d
+	}
+
 	flag.StringVar(&addr, "bind", addr, "Address on which the server should listen")
 	flag.StringVar(&databaseURL, "db", databaseURL, "PostgreSQL URL")
 	flag.StringVar(&auth, "auth", auth, "Authentication method (disabled, password, acoustid-biz)")
 	flag.StringVar(&authUsername, "user", authUsername, "Username for password authentication")
 	flag.StringVar(&authPassword, "password", authPassword, "Password for password authentication")
+	flag.DurationVar(&shutdownDelay, "shutdown-delay", shutdownDelay, "Delay shutdown")
 	flag.Parse()
 
 	db, err := sql.Open("postgres", databaseURL)
@@ -62,13 +73,20 @@ func main() {
 
 	httpServer := &http.Server{Addr: addr, Handler: handler}
 	go func() {
-		log.Printf("Listening on %v", httpServer.Addr)
+		log.Printf("Starting HTTP server on %v", httpServer.Addr)
 		httpServer.ListenAndServe()
 	}()
 
 	<-quit
-	log.Print("Stopping...")
 
-	httpServer.Shutdown(context.Background())
-	log.Print("Done")
+	log.Printf("Marking as unhealthy and waiting for %s", shutdownDelay)
+	handler.SetHealthStatus(false)
+	time.Sleep(shutdownDelay)
+
+	log.Print("Shutting down")
+	shutdownContext, _ := context.WithTimeout(context.Background(), time.Second * 10)
+	httpServer.Shutdown(shutdownContext)
+	httpServer.Close()
+
+	log.Print("Exit")
 }
