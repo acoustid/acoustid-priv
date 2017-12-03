@@ -55,6 +55,7 @@ func (s *API) createRouter() *mux.Router {
 	v1.Methods(http.MethodDelete).Path("/{catalog}").HandlerFunc(s.wrapCatalogHandler(s.DeleteCatalogHandler))
 	v1.Methods(http.MethodPost).Path("/{catalog}").HandlerFunc(s.wrapCatalogHandler(s.CreateAnonymousTrackHandler))
 	v1.Methods(http.MethodPost).Path("/{catalog}/_search").HandlerFunc(s.wrapCatalogHandler(s.SearchHandler))
+	v1.Methods(http.MethodGet).Path("/{catalog}/{track}").HandlerFunc(s.wrapTrackHandler(s.GetTrackHandler))
 	v1.Methods(http.MethodPut).Path("/{catalog}/{track}").HandlerFunc(s.wrapTrackHandler(s.CreateTrackHandler))
 	v1.Methods(http.MethodDelete).Path("/{catalog}/{track}").HandlerFunc(s.wrapTrackHandler(s.DeleteTrackHandler))
 	return router
@@ -195,8 +196,9 @@ func (s *API) DeleteCatalogHandler(w http.ResponseWriter, request *http.Request,
 }
 
 type TrackResponse struct {
-	Catalog string `json:"catalog"`
-	ID      string `json:"id"`
+	Catalog  string   `json:"catalog"`
+	ID       string   `json:"id"`
+	Metadata Metadata `json:"metadata,omitempty"`
 }
 
 type CreateTrackRequest struct {
@@ -247,7 +249,7 @@ func (s *API) CreateTrackHandler(w http.ResponseWriter, request *http.Request, c
 		return
 	}
 
-	writeResponseOK(w, &TrackResponse{catalog.Name(), trackID})
+	writeResponseOK(w, &TrackResponse{Catalog: catalog.Name(), ID: trackID})
 }
 
 func (s *API) DeleteTrackHandler(w http.ResponseWriter, request *http.Request, catalog Catalog, trackID string) {
@@ -258,7 +260,24 @@ func (s *API) DeleteTrackHandler(w http.ResponseWriter, request *http.Request, c
 		return
 	}
 
-	writeResponseOK(w, &TrackResponse{catalog.Name(), trackID})
+	writeResponseOK(w, &TrackResponse{Catalog: catalog.Name(), ID: trackID})
+}
+
+func (s *API) GetTrackHandler(w http.ResponseWriter, request *http.Request, catalog Catalog, trackID string) {
+	results, err := catalog.GetTrack(trackID)
+	if err != nil {
+		log.Printf("Failed to get track %s/%s: %v", catalog.Name(), trackID, err)
+		writeResponseInternalError(w)
+		return
+	}
+
+	if len(results.Results) == 0 {
+		message := fmt.Sprintf("Track %s not found", trackID)
+		writeResponseError(w, http.StatusNotFound, Error{"not_found", message})
+		return
+	}
+
+	writeResponseOK(w, &TrackResponse{Catalog: catalog.Name(), ID: trackID, Metadata: results.Results[0].Metadata})
 }
 
 type SearchRequest struct {

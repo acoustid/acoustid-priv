@@ -188,6 +188,31 @@ func TestCatalog_DeleteTrack_CatalogDoesNotExist(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestCatalog_GetTrack(t *testing.T) {
+	catalog := getTestCatalog(t, true)
+
+	metadata := Metadata{"name": "Track 1"}
+
+	fp, err := chromaprint.ParseFingerprintString(TestFingerprint)
+	require.NoError(t, err)
+	_, err = catalog.CreateTrack("fp1", fp, metadata, false)
+	require.NoError(t, err)
+
+	results, err := catalog.GetTrack("fp1")
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(results.Results))
+	assert.Equal(t, "fp1", results.Results[0].ID)
+	assert.Equal(t, metadata, results.Results[0].Metadata)
+}
+
+func TestCatalog_GetTrack_DoesNotExist(t *testing.T) {
+	catalog := getTestCatalog(t, true)
+
+	results, err := catalog.GetTrack("fp1")
+	assert.NoError(t, err)
+	assert.Empty(t, results.Results)
+}
+
 func TestCatalog_Search_NoStream_NoMatch1(t *testing.T) {
 	catalog := getTestCatalog(t, true)
 

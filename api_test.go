@@ -278,6 +278,36 @@ func TestApi_DeleteTrack_Error(t *testing.T) {
 	assertHTTPInternalError(t, status, body)
 }
 
+func TestApi_GetTrack(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	service, catalog := createMockCatalogService(ctrl)
+	catalog.EXPECT().GetTrack("track1").Return(&priv.SearchResults{[]priv.SearchResult{
+		{ID: "track1", Metadata: priv.Metadata{"title": "Song title"}},
+	}}, nil)
+
+	api := priv.NewAPI(service)
+	status, body := makeRequest(t, api, "GET", "/v1/priv/cat1/track1", nil)
+	assert.Equal(t, http.StatusOK, status)
+	assert.JSONEq(t, `{"catalog":"cat1","id":"track1","metadata":{"title":"Song title"}}`, body)
+}
+
+func TestApi_GetTrack_NoMetadata(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	service, catalog := createMockCatalogService(ctrl)
+	catalog.EXPECT().GetTrack("track1").Return(&priv.SearchResults{[]priv.SearchResult{
+		{ID: "track1"},
+	}}, nil)
+
+	api := priv.NewAPI(service)
+	status, body := makeRequest(t, api, "GET", "/v1/priv/cat1/track1", nil)
+	assert.Equal(t, http.StatusOK, status)
+	assert.JSONEq(t, `{"catalog":"cat1","id":"track1"}`, body)
+}
+
 func TestApi_Search(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

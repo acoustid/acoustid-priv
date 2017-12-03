@@ -45,6 +45,7 @@ type Catalog interface {
 
 	NewTrackID() string
 
+	GetTrack(id string) (*SearchResults, error)
 	CreateTrack(id string, fp *chromaprint.Fingerprint, meta Metadata, allowDuplicate bool) (bool, error)
 	DeleteTrack(id string) error
 
@@ -519,5 +520,41 @@ func (c *CatalogImpl) Search(queryFP *chromaprint.Fingerprint, opts *SearchOptio
 
 	searchDuration.WithLabelValues(searchType).Observe(time.Since(started).Seconds())
 
+	return results, nil
+}
+
+func (c *CatalogImpl) GetTrack(externalID string) (*SearchResults, error) {
+	tx, err := c.db.BeginTx(context.Background(), &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to open transaction")
+	}
+	defer tx.Rollback()
+
+	results := &SearchResults{}
+
+	exists, err := c.checkCatalog(tx)
+	if !exists {
+		return results, nil
+	}
+
+	query := fmt.Sprintf("SELECT metadata FROM track_%d WHERE external_id = $1", c.id)
+	row := tx.QueryRow(query, externalID)
+	var metadataBytes json.RawMessage
+	err = row.Scan(&metadataBytes)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return results, nil
+		}
+		return nil, errors.WithMessage(err, "failed to fetch track")
+	}
+
+	result := SearchResult{ID: externalID}
+	if metadataBytes != nil {
+		err = json.Unmarshal(metadataBytes, &result.Metadata)
+		if err != nil {
+			return nil, errors.WithMessage(err, "metadata parsing failed")
+		}
+	}
+	results.Results = append(results.Results, result)
 	return results, nil
 }

@@ -96,6 +96,19 @@ func (mr *MockCatalogMockRecorder) Exists() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockCatalog)(nil).Exists))
 }
 
+// GetTrack mocks base method
+func (m *MockCatalog) GetTrack(arg0 string) (*priv.SearchResults, error) {
+	ret := m.ctrl.Call(m, "GetTrack", arg0)
+	ret0, _ := ret[0].(*priv.SearchResults)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTrack indicates an expected call of GetTrack
+func (mr *MockCatalogMockRecorder) GetTrack(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTrack", reflect.TypeOf((*MockCatalog)(nil).GetTrack), arg0)
+}
+
 // Name mocks base method
 func (m *MockCatalog) Name() string {
 	ret := m.ctrl.Call(m, "Name")
