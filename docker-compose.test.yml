@@ -1,0 +1,27 @@
+version: "3"
+services:
+
+  postgres_test:
+    image: postgres:alpine
+    tmpfs:
+      - /var/lib/postgres
+    volumes:
+      - ./sql/init_db.sql:/docker-entrypoint-initdb.d/10-init_db.sql
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/20-schema.sql
+      - ./sql/fixtures.sql:/docker-entrypoint-initdb.d/30-fixtures.sql
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+    environment:
+      POSTGRES_USER: acoustid
+      POSTGRES_DB: acoustid_priv_test
+
+  test:
+    image: golang:1.9
+    command: ["go", "test", "-v", "github.com/acoustid/priv/..."]
+    volumes:
+      - .:/go/src/github.com/acoustid/priv
+    environment:
+      ACOUSTID_PRIV_TEST_DB_HOST: postgres_test
+      ACOUSTID_PRIV_TEST_DB_NAME: acoustid_priv_test
+    depends_on:
+      - postgres_test
