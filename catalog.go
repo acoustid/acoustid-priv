@@ -150,6 +150,7 @@ func (c *CatalogImpl) CreateCatalog() error {
 
 	c.id = id
 	log.Printf("Created catalog name=%v account_id=%v", c.name, c.repo.account.id)
+	catalogActionCount.WithLabelValues("insert").Inc()
 	return nil
 }
 
@@ -189,6 +190,7 @@ func (c *CatalogImpl) DeleteCatalog() error {
 
 	c.id = 0
 	log.Printf("Deleted catalog name=%v account_id=%v", c.name, c.repo.account.id)
+	catalogActionCount.WithLabelValues("delete").Inc()
 	return nil
 }
 
@@ -276,8 +278,10 @@ func (c *CatalogImpl) CreateTrack(externalID string, fingerprint *chromaprint.Fi
 
 	if deleted {
 		log.Printf("Updated track id=%v catalog=%s account_id=%v", externalID, c.name, c.repo.account.id)
+		trackActionCount.WithLabelValues("update").Inc()
 	} else {
 		log.Printf("Inserted track id=%v catalog=%s account_id=%v", externalID, c.name, c.repo.account.id)
+		trackActionCount.WithLabelValues("insert").Inc()
 	}
 	return true, nil
 }
@@ -330,6 +334,7 @@ func (c *CatalogImpl) DeleteTrack(externalID string) error {
 	}
 
 	log.Printf("Deleted track id=%v catalog=%s account_id=%v", externalID, c.name, c.repo.account.id)
+	trackActionCount.WithLabelValues("delete").Inc()
 	return nil
 
 }
