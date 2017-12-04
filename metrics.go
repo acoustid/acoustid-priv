@@ -29,7 +29,7 @@ var searchDuration = prometheus.NewHistogramVec(
 		Name: "search_duration_seconds",
 		Help: "Histogram of search durations partitioned by type",
 		Buckets: prometheus.ExponentialBuckets(0.025, 1.5, 10),
-	}, []string{"type"})
+	}, []string{"type", "stage"})
 
 func init() {
 	prometheus.MustRegister(catalogActionCount)

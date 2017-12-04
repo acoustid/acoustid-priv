@@ -462,10 +462,13 @@ func (c *CatalogImpl) Search(queryFP *chromaprint.Fingerprint, opts *SearchOptio
 
 	values := ExtractQuery(queryFP)
 
+	indexSearchStarted := time.Now()
 	hits, err := c.searchFingerprintIndex(values, opts.Stream)
 	if err != nil {
 		return nil, errors.WithMessage(err, "index search failed")
 	}
+	indexSearchTook := time.Since(indexSearchStarted)
+	searchDuration.WithLabelValues(searchType, "index").Observe(indexSearchTook.Seconds())
 
 	maxCount := 0
 	for _, count := range hits {
@@ -494,6 +497,7 @@ func (c *CatalogImpl) Search(queryFP *chromaprint.Fingerprint, opts *SearchOptio
 	matches := make(map[int]*MatchResult)
 	matchingTrackIDs := make([]int, 0, len(topHits))
 
+	matchingStarted := time.Now()
 	for _, hit := range topHits {
 		_, exists := matches[hit.TrackID]
 		if !exists {
@@ -507,7 +511,10 @@ func (c *CatalogImpl) Search(queryFP *chromaprint.Fingerprint, opts *SearchOptio
 			}
 		}
 	}
+	matchingTook := time.Since(matchingStarted)
+	searchDuration.WithLabelValues(searchType, "match").Observe(matchingTook.Seconds())
 
+	metadataStarted := time.Now()
 	queryTpl := "SELECT id, external_id, metadata FROM track_%d WHERE id = any($1::int[])"
 	query := fmt.Sprintf(queryTpl, c.id)
 	rows, err := tx.Query(query, pq.Array(matchingTrackIDs))
@@ -535,8 +542,13 @@ func (c *CatalogImpl) Search(queryFP *chromaprint.Fingerprint, opts *SearchOptio
 		}
 		results.Results = append(results.Results, result)
 	}
+	metadataTook := time.Since(metadataStarted)
+	searchDuration.WithLabelValues(searchType, "metadata").Observe(metadataTook.Seconds())
 
-	searchDuration.WithLabelValues(searchType).Observe(time.Since(started).Seconds())
+	searchTook := time.Since(started)
+	searchDuration.WithLabelValues(searchType, "all").Observe(searchTook.Seconds())
+
+	log.Printf("Search timing index=%v match=%v metadata=%v all=%v", indexSearchTook, matchingTook, metadataTook, searchTook)
 
 	return results, nil
 }

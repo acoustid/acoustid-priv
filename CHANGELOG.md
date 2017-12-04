@@ -1,5 +1,9 @@
 # Releases
 
+## Release 1.1.2
+
+- Added debug output with detailed search timing
+
 ## Release 1.1.1
 
 - Fix search with stream=true
