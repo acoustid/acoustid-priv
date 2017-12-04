@@ -359,7 +359,7 @@ func (s *API) SearchHandler(w http.ResponseWriter, request *http.Request, catalo
 		return
 	}
 
-	if data.Stream && len(fingerprint.Hashes) < 300 {
+	if data.Stream && len(fingerprint.Hashes) > 300 {
 		writeResponseError(w, http.StatusBadRequest, Error{"invalid_request", "Fingerprint too long for stream search"})
 		return
 	}

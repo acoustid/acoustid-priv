@@ -1,5 +1,9 @@
 # Releases
 
+## Release 1.1.1
+
+- Fix search with stream=true
+
 ## Release 1.1.0
 
 - Duplicate fingerprints are not allowed by default
