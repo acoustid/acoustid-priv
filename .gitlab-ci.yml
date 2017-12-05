@@ -11,7 +11,7 @@ test:
     - docker-compose build test
     - docker-compose run test
   after_script:
-    - docker-compose down
+    - docker-compose down --rmi local --volumes
   tags:
     - docker-host
 
