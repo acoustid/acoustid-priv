@@ -9,7 +9,7 @@ test:
     COMPOSE_FILE: docker-compose.test.yml
   script:
     - cd $CI_PROJECT_DIR
-    - docker-compose run test
+    - docker-compose run --build test
   after_script:
     - docker-compose down
   tags:
