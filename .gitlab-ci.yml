@@ -4,14 +4,11 @@ stages:
   - docker
 
 test:
-  image: docker.oxygene.sk/acoustid/docker-compose
   variables:
     COMPOSE_PROJECT_NAME: gitlab-$CI_PROJECT_ID-$CI_JOB_ID
     COMPOSE_FILE: docker-compose.test.yml
   script:
     - cd $CI_PROJECT_DIR
-    - docker-compose up -d postgres_test
-    - sleep 10
     - docker-compose run test
   after_script:
     - docker-compose down

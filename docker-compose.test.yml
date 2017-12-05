@@ -16,8 +16,9 @@ services:
       POSTGRES_DB: acoustid_priv_test
 
   test:
-    image: golang:1.9
-    command: ["go", "test", "-v", "github.com/acoustid/priv/..."]
+    build:
+      context: .
+      dockerfile: Dockerfile.test
     volumes:
       - .:/go/src/github.com/acoustid/priv
     environment:
