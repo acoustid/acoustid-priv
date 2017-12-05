@@ -31,10 +31,9 @@ services:
       POSTGRES_DB: acoustid_priv_test
 
   api:
-    image: docker.oxygene.sk/acoustid/priv
+    image: docker.oxygene.sk/acoustid/priv:${VERSION:-latest}
     build:
       context: .
-      dockerfile: ${DOCKERFILE:-Dockerfile.build}
     ports:
       - "127.0.0.1:3382:3382"
     environment:

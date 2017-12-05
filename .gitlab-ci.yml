@@ -1,15 +1,15 @@
 stages:
   - test
   - build
-  - docker
 
 test:
+  stage: test
   variables:
-    COMPOSE_PROJECT_NAME: gitlab-$CI_PROJECT_ID-$CI_JOB_ID
+    COMPOSE_PROJECT_NAME: gitlab-$CI_PROJECT_ID-$CI_JOB_NAME-$CI_JOB_ID
     COMPOSE_FILE: docker-compose.test.yml
   script:
-    - cd $CI_PROJECT_DIR
-    - docker-compose run --build test
+    - docker-compose build test
+    - docker-compose run test
   after_script:
     - docker-compose down
   tags:
@@ -17,27 +17,12 @@ test:
 
 build:
   stage: build
-  image: golang:1.9-alpine
-  script:
-    - mkdir -p $GOPATH/src/github.com/acoustid
-    - ln -s $CI_PROJECT_DIR $GOPATH/src/github.com/acoustid/priv
-    - go build github.com/acoustid/priv/cmd/acoustid-priv-api
-  artifacts:
-    paths:
-      - acoustid-priv-api
-    expire_in: 1w
-
-docker-image:
-  stage: docker
   image: docker
+  variables:
+    COMPOSE_PROJECT_NAME: gitlab-$CI_PROJECT_ID-$CI_JOB_NAME-$CI_JOB_ID
+    COMPOSE_FILE: docker-compose.yml
   script:
     - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
-    - ./scripts/build-image.sh
-
-docker-update-latest-tag:
-  stage: docker
-  image: docker
-  script:
-    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
-    - ./scripts/tag-latest-image.sh
-  when: manual
+    - ./scripts/ci-build-image.sh
+  tags:
+    - docker-host

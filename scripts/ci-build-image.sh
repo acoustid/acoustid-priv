@@ -14,5 +14,9 @@ docker push $CI_REGISTRY_IMAGE:$VERSION
 
 if [ -n "$CI_COMMIT_TAG" ]
 then
-    $(dirname $0)/tag-latest-image.sh
+    docker tag $CI_REGISTRY_IMAGE:$VERSION $CI_REGISTRY_IMAGE:latest
+    docker push $CI_REGISTRY_IMAGE:latest
+    docker rmi $CI_REGISTRY_IMAGE:latest
 fi
+
+docker rmi $CI_REGISTRY_IMAGE:$VERSION
