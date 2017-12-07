@@ -6,6 +6,7 @@ import (
 
 type Service interface {
 	GetAccount(externalID string) (Account, error)
+	Status() bool
 }
 
 type ServiceImpl struct {
@@ -37,4 +38,12 @@ func (s *ServiceImpl) GetAccount(externalID string) (Account, error) {
 	}
 
 	return &AccountImpl{db: s.db, id: id}, nil
+}
+
+func (s *ServiceImpl) Status() bool {
+	err := s.db.Ping()
+	if err != nil {
+		return false
+	}
+	return true
 }

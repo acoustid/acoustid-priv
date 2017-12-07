@@ -32,6 +32,7 @@ func TestApi_Health(t *testing.T) {
 	defer ctrl.Finish()
 
 	service := mock.NewMockService(ctrl)
+	service.EXPECT().Status().AnyTimes().Return(true)
 
 	api := priv.NewAPI(service)
 

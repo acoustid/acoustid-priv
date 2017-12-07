@@ -36,12 +36,12 @@ type SearchResult struct {
 
 type ListTracksResult struct {
 	HasMore bool
-	Tracks []TrackDetails
+	Tracks  []TrackDetails
 }
 
 type TrackDetails struct {
-	ID string
-	Metadata Metadata
+	ID          string
+	Metadata    Metadata
 	Fingerprint *chromaprint.Fingerprint
 }
 

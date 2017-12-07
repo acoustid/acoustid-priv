@@ -128,9 +128,15 @@ func (s *API) HealthHandler(w http.ResponseWriter, req *http.Request) {
 	status := atomic.LoadInt32(&s.status)
 	if status == 0 {
 		writeResponseError(w, http.StatusServiceUnavailable, Error{"unavailable", "Service is unavailable"})
-	} else {
-		writeResponseOK(w, struct{}{})
+		return
 	}
+
+	if !s.service.Status() {
+		writeResponseError(w, http.StatusServiceUnavailable, Error{"unavailable", "Service is unavailable"})
+		return
+	}
+
+	writeResponseOK(w, struct{}{})
 }
 
 type ListCatalogsResponse struct {
@@ -203,7 +209,7 @@ func (s *API) GetCatalogHandler(w http.ResponseWriter, request *http.Request, ca
 	response := &ListTracksResponse{
 		Catalog: catalog.Name(),
 		HasMore: results.HasMore,
-		Tracks: make([]ListTracksResponseTrack, len(results.Tracks)),
+		Tracks:  make([]ListTracksResponseTrack, len(results.Tracks)),
 	}
 
 	if results.HasMore {

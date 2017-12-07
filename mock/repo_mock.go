@@ -5,8 +5,8 @@
 package mock
 
 import (
-	priv "github.com/acoustid/priv"
 	chromaprint "github.com/acoustid/go-acoustid/chromaprint"
+	priv "github.com/acoustid/priv"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -288,4 +288,16 @@ func (m *MockService) GetAccount(arg0 string) (priv.Account, error) {
 // GetAccount indicates an expected call of GetAccount
 func (mr *MockServiceMockRecorder) GetAccount(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccount", reflect.TypeOf((*MockService)(nil).GetAccount), arg0)
+}
+
+// Status mocks base method
+func (m *MockService) Status() bool {
+	ret := m.ctrl.Call(m, "Status")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Status indicates an expected call of Status
+func (mr *MockServiceMockRecorder) Status() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Status", reflect.TypeOf((*MockService)(nil).Status))
 }

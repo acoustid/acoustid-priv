@@ -84,7 +84,7 @@ func main() {
 	time.Sleep(shutdownDelay)
 
 	log.Print("Shutting down")
-	shutdownContext, _ := context.WithTimeout(context.Background(), time.Second * 10)
+	shutdownContext, _ := context.WithTimeout(context.Background(), time.Second*10)
 	httpServer.Shutdown(shutdownContext)
 	httpServer.Close()
 
