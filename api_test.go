@@ -410,12 +410,12 @@ func TestApi_Search(t *testing.T) {
 				{
 					ID:       "track1",
 					Metadata: priv.Metadata{"name": "Track 1"},
-					Match: &priv.MatchResult{
+					Match: &chromaprint.MatchResult{
 						Version:      1,
-						Config:       priv.FingerprintConfigs[1],
+						Config:       chromaprint.FingerprintConfigs[1],
 						MasterLength: 1,
 						QueryLength:  1,
-						Sections: []priv.MatchingSection{
+						Sections: []chromaprint.MatchingSection{
 							{Offset: 0, Start: 0, End: 121},
 						},
 					},
@@ -446,12 +446,12 @@ func TestApi_Search_Stream(t *testing.T) {
 				{
 					ID:       "track1",
 					Metadata: priv.Metadata{"name": "Track 1"},
-					Match: &priv.MatchResult{
+					Match: &chromaprint.MatchResult{
 						Version:      1,
-						Config:       priv.FingerprintConfigs[1],
+						Config:       chromaprint.FingerprintConfigs[1],
 						MasterLength: 1,
 						QueryLength:  1,
-						Sections: []priv.MatchingSection{
+						Sections: []chromaprint.MatchingSection{
 							{Offset: 0, Start: 0, End: 121},
 						},
 					},

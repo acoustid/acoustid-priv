@@ -31,7 +31,7 @@ type SearchResults struct {
 type SearchResult struct {
 	ID       string
 	Metadata Metadata
-	Match    *MatchResult
+	Match    *chromaprint.MatchResult
 }
 
 type ListTracksResult struct {
@@ -418,7 +418,7 @@ func (c *CatalogImpl) searchFingerprintIndex(values []int32, stream bool) (map[i
 	return hits, nil
 }
 
-func (c *CatalogImpl) matchFingerprint(trackID int, queryFP *chromaprint.Fingerprint) (*MatchResult, error) {
+func (c *CatalogImpl) matchFingerprint(trackID int, queryFP *chromaprint.Fingerprint) (*chromaprint.MatchResult, error) {
 	queryTpl := "SELECT fingerprint FROM track_%d WHERE id = $1"
 	query := fmt.Sprintf(queryTpl, c.id)
 	row := c.db.QueryRow(query, trackID)
@@ -431,7 +431,7 @@ func (c *CatalogImpl) matchFingerprint(trackID int, queryFP *chromaprint.Fingerp
 	if err != nil {
 		return nil, err
 	}
-	return MatchFingerprints(masterFP, queryFP)
+	return chromaprint.MatchFingerprints(masterFP, queryFP)
 }
 
 func (c *CatalogImpl) Search(queryFP *chromaprint.Fingerprint, opts *SearchOptions) (*SearchResults, error) {
@@ -494,7 +494,7 @@ func (c *CatalogImpl) Search(queryFP *chromaprint.Fingerprint, opts *SearchOptio
 	}
 	sort.Slice(topHits, func(i, j int) bool { return topHits[i].Count < topHits[j].Count })
 
-	matches := make(map[int]*MatchResult)
+	matches := make(map[int]*chromaprint.MatchResult)
 	matchingTrackIDs := make([]int, 0, len(topHits))
 
 	matchingStarted := time.Now()

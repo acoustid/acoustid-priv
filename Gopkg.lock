@@ -4,8 +4,8 @@
 [[projects]]
   branch = "master"
   name = "github.com/acoustid/go-acoustid"
-  packages = ["chromaprint","util"]
-  revision = "a8f2878f30ddf062696ddbde8c90e08f3bd15dba"
+  packages = ["chromaprint","util","util/signal"]
+  revision = "496e9a6bc82b8d6961c2ac49e6c7cb1fc7a627e0"
 
 [[projects]]
   branch = "master"
@@ -118,6 +118,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9d564e104db3fec604defae3a85a3e9a4f9fc333a5244ee6f631fcf7f97bf2ed"
+  inputs-digest = "82487bc3128160a6946260bffb05b8ad624701f1e1c55063d2d8b19975686519"
   solver-name = "gps-cdcl"
   solver-version = 1
