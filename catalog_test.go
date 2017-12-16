@@ -310,7 +310,7 @@ func TestCatalog_Search_Stream_PartialMatch(t *testing.T) {
 				assert.Equal(t, 1, len(results.Results))
 				assert.Equal(t, masterID, results.Results[0].ID)
 				assert.Equal(t, masterMetadata, results.Results[0].Metadata)
-				assert.Equal(t, "12.876237s", results.Results[0].Match.MatchingDuration().String())
+				assert.Equal(t, "13.000046s", results.Results[0].Match.MatchingDuration().String())
 			}
 		}
 	}
