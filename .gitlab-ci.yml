@@ -2,18 +2,18 @@ stages:
   - test
   - build
 
-test:
-  stage: test
-  variables:
-    COMPOSE_PROJECT_NAME: gitlab-$CI_PROJECT_ID-$CI_JOB_NAME-$CI_JOB_ID
-    COMPOSE_FILE: docker-compose.test.yml
-  script:
-    - docker-compose build test
-    - docker-compose run test
-  after_script:
-    - docker-compose down --rmi local --volumes
-  tags:
-    - docker-host
+#test:
+#  stage: test
+#  variables:
+#    COMPOSE_PROJECT_NAME: gitlab-$CI_PROJECT_ID-$CI_JOB_NAME-$CI_JOB_ID
+#    COMPOSE_FILE: docker-compose.test.yml
+#  script:
+#    - docker-compose build test
+#    - docker-compose run test
+#  after_script:
+#    - docker-compose down --rmi local --volumes
+#  tags:
+#    - docker-host
 
 build:
   stage: build
@@ -25,4 +25,4 @@ build:
     - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
     - ./scripts/ci-build-image.sh
   tags:
-    - docker-host
+    - docker
