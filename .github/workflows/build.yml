@@ -1,0 +1,33 @@
+name: Build image
+
+on:
+  push: {}
+
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Check out code
+      uses: actions/checkout@v1
+
+    - name: Check version details
+      id: info
+      run: |
+        echo ::set-output name=IMAGE::quay.io/acoustid/acoustid-priv
+        if [[ $GITHUB_REF == refs/tags/v* ]]
+          echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d'/' -f3 | sed 's/^v//')
+        else
+          echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d'/' -f3)
+        fi
+
+    - name: Build image
+      run: |
+        docker build -t ${{ steps.info.outputs.IMAGE }}:${{ steps.info.outputs.VERSION }} .
+
+    - name: Push image
+      run: |
+        echo ${{ secrets.QUAY_PASSWORD }} | docker login quay.io -u ${{ secrets.QUAY_USERNAME }} --password-stdin
+        docker push ${{ steps.info.outputs.IMAGE }}:${{ steps.info.outputs.VERSION }}
