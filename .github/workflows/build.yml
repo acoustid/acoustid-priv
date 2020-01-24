@@ -15,6 +15,7 @@ jobs:
           - 5432/tcp
         env:
           POSTGRES_USER: acoustid
+          POSTGRES_PASSWORD: notasecret
           POSTGRES_DB: acoustid_priv_test
         options: >-
           --health-cmd pg_isready
@@ -24,8 +25,16 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v1
-      - name: Test
-        run: echo 1
+      - name: Setup database
+        run: |
+          container=$(docker ps -q -f expose=5432)
+          docker exec -i -e PGUSER=$PGUSER -e PGPASSWORD=$PGPASSWORD -e PGDATABASE=$PGDATABASE $container psql  < ./sql/init_db.sql
+          docker exec -i -e PGUSER=$PGUSER -e PGPASSWORD=$PGPASSWORD -e PGDATABASE=$PGDATABASE $container psql < ./sql/schema.sql
+          docker exec -i -e PGUSER=$PGUSER -e PGPASSWORD=$PGPASSWORD -e PGDATABASE=$PGDATABASE $container psql < ./sql/fixtures.sql
+        env:
+          PGUSER: acoustid
+          PGPASSWORD: notasecret
+          PGDATABASE: acoustid_priv_test
 
   build:
     name: Build
