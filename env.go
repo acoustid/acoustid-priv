@@ -39,7 +39,16 @@ func ParseDatabaseEnv(test bool) (string, error) {
 
 	user := os.Getenv(prefix + "_DB_USER")
 	if user == "" {
-		user = "acoustid"
+		userFile := os.Getenv(prefix + "_DB_USER_FILE")
+		if userFile != "" {
+			userData, err := ioutil.ReadFile(userFile)
+			if err != nil {
+				return "", errors.WithMessage(err, "Unable to read user file")
+			}
+			user = string(userData)
+		} else {
+		  user = "acoustid"
+		}
 	}
 	password := os.Getenv(prefix + "_DB_PASSWORD")
 	if password != "" {
