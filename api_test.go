@@ -432,7 +432,7 @@ func TestApi_Search(t *testing.T) {
 	api := priv.NewAPI(service)
 	status, body := makeRequest(t, api, "POST", "/v1/priv/cat1/_search", bytes.NewReader(requestBody))
 	assert.Equal(t, http.StatusOK, status)
-	assert.JSONEq(t, `{"catalog": "cat1", "results": [{"id": "track1", "metadata": {"name": "Track 1"}, "match": {"position": 0, "duration": 17.580979}}]}`, body)
+	assert.JSONEq(t, `{"catalog": "cat1", "results": [{"id": "track1", "metadata": {"name": "Track 1"}, "match": {"position": 0, "position_in_query": 0, "duration": 17.580979}}]}`, body)
 }
 
 func TestApi_Search_Stream(t *testing.T) {
@@ -468,7 +468,7 @@ func TestApi_Search_Stream(t *testing.T) {
 	api := priv.NewAPI(service)
 	status, body := makeRequest(t, api, "POST", "/v1/priv/cat1/_search", bytes.NewReader(requestBody))
 	assert.Equal(t, http.StatusOK, status)
-	assert.JSONEq(t, `{"catalog": "cat1", "results": [{"id": "track1", "metadata": {"name": "Track 1"}, "match": {"position": 0, "duration": 17.580979}}]}`, body)
+	assert.JSONEq(t, `{"catalog": "cat1", "results": [{"id": "track1", "metadata": {"name": "Track 1"}, "match": {"position": 0, "position_in_query": 0, "duration": 17.580979}}]}`, body)
 }
 
 func assertHTTPInternalError(t *testing.T, status int, body string) {

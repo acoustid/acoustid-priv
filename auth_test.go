@@ -96,7 +96,7 @@ func TestAcoustidBizAuth_Authenticate(t *testing.T) {
 	server := createFakeAcoustidBizServer()
 	defer server.Close()
 
-	auth := NewAcoustidBizAuth()
+	auth := NewAcoustidBizAuth("private")
 	auth.Cache = cache.New(time.Minute, time.Minute)
 	auth.Endpoint = server.URL
 
@@ -121,7 +121,7 @@ func TestAcoustidBizAuth_Authenticate_Invalid(t *testing.T) {
 	server := createFakeAcoustidBizServer()
 	defer server.Close()
 
-	auth := NewAcoustidBizAuth()
+	auth := NewAcoustidBizAuth("private")
 	auth.Cache = cache.New(time.Minute, time.Minute)
 	auth.Endpoint = server.URL
 
