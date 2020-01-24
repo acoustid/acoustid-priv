@@ -25,16 +25,31 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v1
+        with:
+          path: ./src/github.com/acoustid/priv
       - name: Setup database
         run: |
           container=$(docker ps -q -f expose=5432)
-          docker exec -i -e PGUSER=$PGUSER -e PGPASSWORD=$PGPASSWORD -e PGDATABASE=$PGDATABASE $container psql  < ./sql/init_db.sql
+          docker exec -i -e PGUSER=$PGUSER -e PGPASSWORD=$PGPASSWORD -e PGDATABASE=$PGDATABASE $container psql < ./sql/init_db.sql
           docker exec -i -e PGUSER=$PGUSER -e PGPASSWORD=$PGPASSWORD -e PGDATABASE=$PGDATABASE $container psql < ./sql/schema.sql
           docker exec -i -e PGUSER=$PGUSER -e PGPASSWORD=$PGPASSWORD -e PGDATABASE=$PGDATABASE $container psql < ./sql/fixtures.sql
         env:
           PGUSER: acoustid
           PGPASSWORD: notasecret
           PGDATABASE: acoustid_priv_test
+      - name: Setup go
+        uses: actions/setup-go@v1
+        with:
+          go-version: '1.9.3'
+      - name: Run tests
+        run: go test -v github.com/acoustid/priv/...
+        env:
+          GOPATH: ${{ runner.workspace }}
+          ACOUSTID_PRIV_TEST_DB_HOST: localhost
+          ACOUSTID_PRIV_TEST_DB_PORT: ${{ job.services.postgresql.ports['5432'] }}
+          ACOUSTID_PRIV_TEST_DB_USER: acoustid
+          ACOUSTID_PRIV_TEST_DB_PASSWORD: notasecret
+          ACOUSTID_PRIV_TEST_DB_NAME: acoustid_priv_test
 
   build:
     name: Build
