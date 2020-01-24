@@ -347,6 +347,7 @@ type SearchResponseResult struct {
 
 type SearchResponseResultMatch struct {
 	Position float64 `json:"position"`
+	PositionInQuery float64 `json:"position_in_query"`
 	Duration float64 `json:"duration"`
 }
 
@@ -388,6 +389,7 @@ func (s *API) SearchHandler(w http.ResponseWriter, request *http.Request, catalo
 			Metadata: result.Metadata,
 			Match: SearchResponseResultMatch{
 				Position: result.Match.MasterOffset().Seconds(),
+				PositionInQuery: result.Match.QueryOffset().Seconds(),
 				Duration: result.Match.MatchingDuration().Seconds(),
 			},
 		}
