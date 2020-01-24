@@ -47,7 +47,7 @@ func ParseDatabaseEnv(test bool) (string, error) {
 			}
 			user = string(userData)
 		} else {
-		  user = "acoustid"
+			user = "acoustid"
 		}
 	}
 	password := os.Getenv(prefix + "_DB_PASSWORD")

@@ -54,7 +54,7 @@ func main() {
 	flag.StringVar(&auth, "auth", auth, "Authentication method (disabled, password, acoustid-biz)")
 	flag.StringVar(&authUsername, "user", authUsername, "Username for password authentication")
 	flag.StringVar(&authPassword, "password", authPassword, "Password for password authentication")
-	flag.StringVar(&authUserTag, "user-tag", authPassword, "User tag for acoustid-biz authentication")
+	flag.StringVar(&authUserTag, "user-tag", authUserTag, "User tag for acoustid-biz authentication")
 	flag.DurationVar(&shutdownDelay, "shutdown-delay", shutdownDelay, "Delay shutdown")
 	flag.Parse()
 
@@ -67,8 +67,10 @@ func main() {
 	handler := priv.NewAPI(service)
 
 	if auth == "password" {
+		log.Printf("Using password authentication")
 		handler.Auth = &priv.PasswordAuth{authUsername, authPassword}
 	} else if auth == "acoustid-biz" {
+		log.Printf("Using acoustid.biz authentication with user tag %v", authUserTag)
 		authenticator := priv.NewAcoustidBizAuth(authUserTag)
 		authenticator.Cache = cache.New(time.Hour, time.Minute*10)
 		handler.Auth = authenticator
