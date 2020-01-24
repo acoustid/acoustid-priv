@@ -42,12 +42,14 @@ type AcoustidBizAuth struct {
 	Cache    Cache
 	Endpoint string
 	Username string
+	Tag      string
 }
 
-func NewAcoustidBizAuth() *AcoustidBizAuth {
+func NewAcoustidBizAuth(tag string) *AcoustidBizAuth {
 	auth := &AcoustidBizAuth{}
 	auth.Endpoint = "https://acoustid.biz/internal/validate-api-key"
 	auth.Username = "x-acoustid-api-key"
+	auth.Tag = tag
 	return auth
 }
 
@@ -94,7 +96,7 @@ func (a *AcoustidBizAuth) check(apiKey string) (account string, err error) {
 }
 
 func (a *AcoustidBizAuth) validateApiKey(apiKey string) (account string, err error) {
-	params := url.Values{"api_key": {apiKey}, "tag": {"private"}}
+	params := url.Values{"api_key": {apiKey}, "tag": {a.Tag}}
 	resp, err := http.Get(a.Endpoint + "?" + params.Encode())
 	if err != nil {
 		return "", err

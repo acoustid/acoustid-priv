@@ -34,6 +34,11 @@ func main() {
 	authUsername := os.Getenv("ACOUSTID_PRIV_AUTH_USER")
 	authPassword := os.Getenv("ACOUSTID_PRIV_AUTH_PASSWORD")
 
+	authUserTag := os.Getenv("ACOUSTID_PRIV_AUTH_USER_TAG")
+	if authUserTag == "" {
+		authUserTag = "private"
+	}
+
 	shutdownDelay := time.Millisecond * 100
 	shutdownDelayStr := os.Getenv("ACOUSTID_PRIV_SHUTDOWN_DELAY")
 	if shutdownDelayStr != "" {
@@ -49,6 +54,7 @@ func main() {
 	flag.StringVar(&auth, "auth", auth, "Authentication method (disabled, password, acoustid-biz)")
 	flag.StringVar(&authUsername, "user", authUsername, "Username for password authentication")
 	flag.StringVar(&authPassword, "password", authPassword, "Password for password authentication")
+	flag.StringVar(&authUserTag, "user-tag", authPassword, "User tag for acoustid-biz authentication")
 	flag.DurationVar(&shutdownDelay, "shutdown-delay", shutdownDelay, "Delay shutdown")
 	flag.Parse()
 
@@ -63,7 +69,7 @@ func main() {
 	if auth == "password" {
 		handler.Auth = &priv.PasswordAuth{authUsername, authPassword}
 	} else if auth == "acoustid-biz" {
-		authenticator := priv.NewAcoustidBizAuth()
+		authenticator := priv.NewAcoustidBizAuth(authUserTag)
 		authenticator.Cache = cache.New(time.Hour, time.Minute*10)
 		handler.Auth = authenticator
 	}
