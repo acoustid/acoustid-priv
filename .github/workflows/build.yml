@@ -5,9 +5,28 @@ on:
 
 jobs:
 
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    services:
+      postgresql:
+        image: postgres
+        ports:
+          - 5432/tcp
+        env:
+          POSTGRES_USER: acoustid
+          POSTGRES_DB: acoustid_priv_test
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v1
+      - name: Test
+        run: echo 1
+
   build:
     name: Build
     runs-on: ubuntu-latest
+    needs:
+      - test
     steps:
 
     - name: Check out code
